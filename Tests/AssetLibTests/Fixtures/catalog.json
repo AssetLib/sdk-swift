@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "placements": [
+    {
+      "key": "travel.coast",
+      "width": 1200,
+      "height": 900,
+      "symbol": [
+        "Travel",
+        "coast"
+      ]
+    }
+  ]
+}

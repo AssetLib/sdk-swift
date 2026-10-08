@@ -1,0 +1,18 @@
+{
+  "coast": {
+    "file": "assets/coast.webp",
+    "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "bytes": 17334,
+    "sha256": "03fa6da42647d0dac7228a39bad28f5ea550ffcfef9a0872b5c685875e91a8fa",
+    "mime": "image/webp",
+    "provenance": "apps/console/seed-assets/coast.webp; original Assetlib demo illustration"
+  },
+  "ridge": {
+    "file": "assets/ridge.webp",
+    "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "bytes": 17604,
+    "sha256": "81baaf0d925b4ec2a9c1d0afb6379b9e9eb87692b9a4f6d580005c0cd9eccd10",
+    "mime": "image/webp",
+    "provenance": "apps/console/seed-assets/ridge.webp; original Assetlib demo illustration"
+  }
+}

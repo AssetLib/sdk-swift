@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "testOnly": true,
+  "config": "config.json",
+  "catalog": "catalog.json",
+  "assets": "assets.json",
+  "manifests": [
+    {
+      "file": "manifests/valid-seq1.json",
+      "verification": "accept",
+      "reason": "First release: coast artwork, exact UTF-8 payload includes non-ASCII text."
+    },
+    {
+      "file": "manifests/valid-seq2.json",
+      "verification": "accept",
+      "reason": "Second release: ridge artwork replaces coast in the same typed placement."
+    },
+    {
+      "file": "manifests/valid-rollback-seq3.json",
+      "verification": "accept",
+      "reason": "Authorized rollback is new sequence 3 reusing the coast asset bytes."
+    },
+    {
+      "file": "manifests/valid-pretty-seq1.json",
+      "verification": "accept",
+      "reason": "Valid signature over a differently formatted payload; accept for fresh state without reserialization."
+    },
+    {
+      "file": "manifests/valid-absolute-url.json",
+      "verification": "accept",
+      "reason": "Absolute same-origin exact asset path is valid."
+    },
+    {
+      "file": "manifests/valid-logical-dimensions.json",
+      "verification": "accept",
+      "reason": "Logical placement dimensions need not equal decoded WebP pixels; matching generated reference must be 600×450."
+    },
+    {
+      "file": "manifests/valid-screen-utf16-boundary.json",
+      "verification": "accept",
+      "reason": "60 astral characters occupy exactly 120 UTF-16 code units."
+    },
+    {
+      "file": "manifests/invalid/bad-signature.json",
+      "verification": "reject",
+      "reason": "Signature bytes changed; payload unchanged."
+    },
+    {
+      "file": "manifests/invalid/payload-tamper.json",
+      "verification": "reject",
+      "reason": "Payload UTF-8 changed without re-signing."
+    },
+    {
+      "file": "manifests/invalid/pinned-pem-text.json",
+      "verification": "reject",
+      "reason": "Same underlying key but different PEM text is not the configured pin."
+    },
+    {
+      "file": "manifests/invalid/key-id.json",
+      "verification": "reject",
+      "reason": "Envelope key ID differs from SHA-256 of exact configured PEM."
+    },
+    {
+      "file": "manifests/invalid/algorithm.json",
+      "verification": "reject",
+      "reason": "Algorithm name is case-sensitive."
+    },
+    {
+      "file": "manifests/invalid/base64-signature.json",
+      "verification": "reject",
+      "reason": "Signature must be canonical 88-character base64 with == suffix."
+    },
+    {
+      "file": "manifests/invalid/cross-app.json",
+      "verification": "reject",
+      "reason": "Signed payload is scoped to another app. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/cross-org.json",
+      "verification": "reject",
+      "reason": "Signed payload is scoped to another organization. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/environment.json",
+      "verification": "reject",
+      "reason": "Wrong environment. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/schema-version.json",
+      "verification": "reject",
+      "reason": "Unsupported payload schema. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/external-url.json",
+      "verification": "reject",
+      "reason": "Cross-origin image URL. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/cross-app-url.json",
+      "verification": "reject",
+      "reason": "Image path is outside configured app. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/asset-id-url.json",
+      "verification": "reject",
+      "reason": "URL asset ID does not match signed slot asset ID. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/query-url.json",
+      "verification": "reject",
+      "reason": "Asset URL query is prohibited. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/fragment-url.json",
+      "verification": "reject",
+      "reason": "Asset URL fragment is prohibited. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/userinfo-url.json",
+      "verification": "reject",
+      "reason": "Asset URL userinfo is prohibited. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/mime.json",
+      "verification": "reject",
+      "reason": "Preview contract supports image/webp only. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/uppercase-hash.json",
+      "verification": "reject",
+      "reason": "SHA-256 must be 64 lowercase hexadecimal characters. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/invalid-key.json",
+      "verification": "reject",
+      "reason": "Placement key does not match the allowed key grammar. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/duplicate-key.json",
+      "verification": "reject",
+      "reason": "Duplicate placement keys are forbidden. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/empty-slots.json",
+      "verification": "reject",
+      "reason": "At least one slot is required. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/too-many-slots.json",
+      "verification": "reject",
+      "reason": "Maximum 100 placements. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/dimension-zero.json",
+      "verification": "reject",
+      "reason": "Logical dimensions start at 1. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/dimension-limit.json",
+      "verification": "reject",
+      "reason": "Logical dimensions cannot exceed 8192. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/screen-utf16-limit.json",
+      "verification": "reject",
+      "reason": "61 astral characters occupy 122 UTF-16 code units and exceed the screen bound. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/bytes-zero.json",
+      "verification": "reject",
+      "reason": "Image byte count must be positive. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/bytes-limit.json",
+      "verification": "reject",
+      "reason": "Image byte count exceeds 8 MiB. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/sequence-zero.json",
+      "verification": "reject",
+      "reason": "Sequences start at 1. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/sequence-fractional.json",
+      "verification": "reject",
+      "reason": "Sequence must be integer. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/sequence-boolean.json",
+      "verification": "reject",
+      "reason": "Boolean is not an integer even if a platform boxes it as a number. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/sequence-limit.json",
+      "verification": "reject",
+      "reason": "Sequence exceeds signed 32-bit positive range. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/invalid/invalid-time.json",
+      "verification": "reject",
+      "reason": "createdAt must parse as a date. Signature is valid, so rejection must occur after signature verification."
+    },
+    {
+      "file": "manifests/stateful/stale-seq1.json",
+      "verification": "accept",
+      "reason": "Stateless-valid; refresh must reject after persisted sequence 2."
+    },
+    {
+      "file": "manifests/stateful/equivocation-seq2.json",
+      "verification": "accept",
+      "reason": "Stateless-valid; exact signed payload differs from accepted sequence 2 and must be rejected statefully."
+    },
+    {
+      "file": "manifests/stateful/reformatted-seq2.json",
+      "verification": "accept",
+      "reason": "Stateless-valid and semantically equal; exact UTF-8 payload differs, so reject after sequence 2."
+    },
+    {
+      "file": "manifests/stateful/unicode-equivalent-seq2.json",
+      "verification": "accept",
+      "reason": "Stateless-valid; canonically equivalent Unicode is still different signed UTF-8 and must be rejected after sequence 2. Swift String equality is not byte equality."
+    }
+  ],
+  "stateful": [
+    {
+      "initialState": "state/after-seq2.json",
+      "next": "manifests/stateful/stale-seq1.json",
+      "expected": "reject-preserve-sequence-2"
+    },
+    {
+      "initialState": "state/after-seq2.json",
+      "next": "manifests/stateful/equivocation-seq2.json",
+      "expected": "reject-preserve-sequence-2"
+    },
+    {
+      "initialState": "state/after-seq2.json",
+      "next": "manifests/stateful/reformatted-seq2.json",
+      "expected": "reject-preserve-sequence-2"
+    },
+    {
+      "initialState": "state/after-seq2.json",
+      "next": "manifests/stateful/unicode-equivalent-seq2.json",
+      "expected": "reject-preserve-sequence-2"
+    },
+    {
+      "initialState": "state/after-seq2.json",
+      "next": "manifests/valid-seq2.json",
+      "expected": "idempotent-sequence-2"
+    },
+    {
+      "initialState": "state/after-seq2.json",
+      "next": "manifests/valid-rollback-seq3.json",
+      "expected": "accept-sequence-3-coast"
+    }
+  ],
+  "byteFailures": [
+    {
+      "manifest": "manifests/valid-seq2.json",
+      "body": "assets/ridge-tampered.webp",
+      "reason": "Same length, wrong SHA-256."
+    },
+    {
+      "manifest": "manifests/valid-seq2.json",
+      "body": "assets/ridge-truncated.webp",
+      "reason": "Short body, wrong length and SHA-256."
+    }
+  ]
+}

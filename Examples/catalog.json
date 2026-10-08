@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "placements": [
+    {"key":"travel.coast","symbol":["Travel","coast"],"width":1200,"height":900,"fallbackImageName":"coast"},
+    {"key":"travel.ridge","symbol":["Travel","ridge"],"width":1200,"height":900,"fallbackImageName":"ridge"},
+    {"key":"tasks.garden","symbol":["Tasks","garden"],"width":600,"height":400,"fallbackImageName":"garden"}
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "publicKeyRawHex": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+  "publicKeyPemSha256": "f0ff50dacf109dea7f716d7c03eb7a821aa3a283fd3fa02f4c14dbba7d3c3322",
+  "keyId": "f0ff50dacf109dea",
+  "vectors": [
+    {
+      "name": "seq1",
+      "payloadFile": "payloads/seq1.utf8",
+      "utf8Bytes": 588,
+      "payloadSha256": "496b2617a2936984db9767ac23ecb07efe01136d33fd63c5eb773ec8a868ea57",
+      "signatureBase64": "KjvVR2lMFtM7FsB/hKYRQWT9TnNqjHgdarJldYvIBLOE8LP9nE/7b8iYzxXQHL2xSsCiMqJjfqGVa/6WVVJaAw==",
+      "signatureHex": "2a3bd547694c16d33b16c07f84a6114164fd4e736a8c781d6ab265758bc804b384f0b3fd9c4ffb6fc898cf15d01cbdb14ac0a232a2637ea1956bfe9655525a03"
+    },
+    {
+      "name": "seq2",
+      "payloadFile": "payloads/seq2.utf8",
+      "utf8Bytes": 588,
+      "payloadSha256": "52d18f88910c5b823eaa220862378ece56e16ab33443fbe5d33616f77d4aa3cd",
+      "signatureBase64": "jYKw37G7yu/V1JL+59fRHrazu5zIxs5kryJNcnYLz7c9agbCiJqo0PxSsJL0NM/+8pANIidfTq5dksOS6eDVBQ==",
+      "signatureHex": "8d82b0dfb1bbcaefd5d492fee7d7d11eb6b3bb9cc8c6ce64af224d72760bcfb73d6a06c2889aa8d0fc52b092f434cffef2900d22275f4eae5d92c392e9e0d505"
+    },
+    {
+      "name": "rollback-seq3",
+      "payloadFile": "payloads/rollback-seq3.utf8",
+      "utf8Bytes": 588,
+      "payloadSha256": "2af330fc65bdf0f243839ab136d5926b49cafe649d82bcadae20b247d11f27b3",
+      "signatureBase64": "7e4nhJplB7Lk3mVjOS/tWzcVnuaEOWP17GbaabaXefpOZ2iTO63czQ9KHmAC3ma8+Jwb2zOH2BEtz85A4CGaAQ==",
+      "signatureHex": "edee27849a6507b2e4de6563392fed5b37159ee6843963f5ec66da69b69779fa4e6768933baddccd0f4a1e6002de66bcf89c1bdb3387d8112dcfce40e0219a01"
+    }
+  ]
+}
