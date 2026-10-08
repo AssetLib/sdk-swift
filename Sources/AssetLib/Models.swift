@@ -110,8 +110,9 @@ struct ManifestSlot: Codable, Sendable {
     let mime: String
     let bytes: Int
     let renditions: [ManifestRendition]?
+    let accessibility: AssetAccessibility?
 
-    enum CodingKeys: String, CodingKey { case key, screen, width, height, assetId, sha256, url, mime, bytes, renditions }
+    enum CodingKeys: String, CodingKey { case key, screen, width, height, assetId, sha256, url, mime, bytes, renditions, accessibility }
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         key = try c.decode(String.self, forKey: .key)
@@ -124,6 +125,7 @@ struct ManifestSlot: Codable, Sendable {
         mime = try c.decode(String.self, forKey: .mime)
         bytes = try c.decode(Int.self, forKey: .bytes)
         renditions = c.contains(.renditions) ? try c.decode([ManifestRendition].self, forKey: .renditions) : nil
+        accessibility = c.contains(.accessibility) ? try c.decode(AssetAccessibility.self, forKey: .accessibility) : nil
     }
 }
 
@@ -171,6 +173,8 @@ public struct ResolvedAsset: Sendable {
     public let assetID: String?
     public let mime: String?
     public let pixelSize: AssetPixelSize?
+    /// Describes these bytes from this release; never borrowed from a newer release or the bundle.
+    public let accessibility: AssetAccessibility?
 }
 
 public struct RefreshResult: Sendable {

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1-preview.1
+
+- Adds optional localized descriptions to verified asset results, paired with the actual remote or cached release. Historical fallback never borrows descriptions from a newer image.
+- Adds `AssetAccessibility` locale selection and optional `bundledAccessibility` in offline catalogs.
+- Adds native `AssetArtwork` snapshots and generated helpers while retaining native `Image` properties and app-owned labels/decoration. Informative usages can keep the bundle when a remote image has no description.
+- Adds compiled decorative/informative examples, deterministic generator validation and safe string escaping.
+
+Validation: 82 signed-manifest cases, focused cache/localization/fallback tests, four code-generation tests, and a Swift release build. Manual iOS VoiceOver acceptance is not established by these checks. This scoped release excludes unrelated animation fixture work.
+
 ## 0.2.0-preview.1
 
 - Supports signed `renditionSchemaVersion: 1` metadata alongside the required legacy WebP slot. Existing 0.1.0-preview.2 clients continue using that slot; no signing key or release-sequence reset is required.

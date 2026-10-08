@@ -329,6 +329,91 @@
       "file": "manifests/invalid/rendition-svg-bytes.json",
       "verification": "reject",
       "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/valid-accessibility-seq6.json",
+      "verification": "accept",
+      "reason": "Localized descriptions are signed with the selected artwork."
+    },
+    {
+      "file": "manifests/valid-accessibility-utf16-boundary.json",
+      "verification": "accept",
+      "reason": "Case-insensitive default locale and exactly 1000 UTF-16 units."
+    },
+    {
+      "file": "manifests/invalid/accessibility-null.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: null."
+    },
+    {
+      "file": "manifests/invalid/accessibility-array.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: array."
+    },
+    {
+      "file": "manifests/invalid/accessibility-missing-default.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: missing-default."
+    },
+    {
+      "file": "manifests/invalid/accessibility-missing-descriptions.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: missing-descriptions."
+    },
+    {
+      "file": "manifests/invalid/accessibility-empty.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: empty."
+    },
+    {
+      "file": "manifests/invalid/accessibility-unknown-default.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: unknown-default."
+    },
+    {
+      "file": "manifests/invalid/accessibility-duplicate-locale.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: duplicate-locale."
+    },
+    {
+      "file": "manifests/invalid/accessibility-invalid-locale.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: invalid-locale."
+    },
+    {
+      "file": "manifests/invalid/accessibility-newline-locale.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: newline-locale."
+    },
+    {
+      "file": "manifests/invalid/accessibility-long-locale.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: long-locale."
+    },
+    {
+      "file": "manifests/invalid/accessibility-blank.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: blank."
+    },
+    {
+      "file": "manifests/invalid/accessibility-unicode-blank.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: unicode-blank."
+    },
+    {
+      "file": "manifests/invalid/accessibility-non-string.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: non-string."
+    },
+    {
+      "file": "manifests/invalid/accessibility-utf16-limit.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: utf16-limit."
+    },
+    {
+      "file": "manifests/invalid/accessibility-too-many-locales.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: too-many-locales."
     }
   ],
   "stateful": [

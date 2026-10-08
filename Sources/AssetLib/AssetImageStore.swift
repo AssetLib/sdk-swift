@@ -2,6 +2,14 @@ import SwiftUI
 import Observation
 import ImageIO
 
+/// A synchronous snapshot pairing a native image with its optional content description.
+/// Read inside the view body. No accessibility modifiers are applied automatically.
+public struct AssetArtwork {
+    public let image: Image
+    public let accessibilityDescription: String?
+    public let source: AssetSource
+}
+
 /// Read image(in:) inside a SwiftUI body. The returned Image remains fully native and caller-modifiable.
 @MainActor @Observable
 public final class AssetImageStore {
@@ -31,6 +39,18 @@ public final class AssetImageStore {
         imageCosts.removeAll(); imageOrder.removeAll()
     }
     public func image(for reference: AssetReference, fallback: Image) -> Image { images[reference] ?? fallback }
+
+    /// Opt in to paired descriptions. Informative placements can keep their bundled image when a
+    /// remote release has no description. The app still owns its label, hiding, and control traits.
+    public func artwork(for reference: AssetReference, fallback: Image,
+                        bundledAccessibility: AssetAccessibility? = nil, locale: Locale = .current,
+                        requireDescription: Bool = false) -> AssetArtwork {
+        if let image = images[reference], let result = results[reference],
+           !requireDescription || result.accessibility != nil {
+            return AssetArtwork(image: image, accessibilityDescription: result.accessibility?.localizedDescription(locale: locale), source: result.source)
+        }
+        return AssetArtwork(image: fallback, accessibilityDescription: bundledAccessibility?.localizedDescription(locale: locale), source: .bundle)
+    }
 
     /// Explicit lifecycle work; getters never start requests. A generation check blocks stale connection results.
     /// Supply physical pixel targets for known layouts; omitted entries use the logical reference size.

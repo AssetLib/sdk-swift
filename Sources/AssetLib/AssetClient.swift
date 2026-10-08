@@ -107,7 +107,7 @@ public actor AssetClient {
                     do {
                         try Task.checkCancellation()
                         if let data = try await storage.asset(for: candidate.sha256), let size = ManifestVerifier.decodedSize(data, candidate: candidate) {
-                            return .init(source: .cache, sequence: payload.sequence, message: index == 0 ? "Verified artwork from this device." : "Using verified artwork from release \(payload.sequence). \(message)", bytes: data, sha256: candidate.sha256, assetID: slot.assetId, mime: candidate.mime, pixelSize: size)
+                            return .init(source: .cache, sequence: payload.sequence, message: index == 0 ? "Verified artwork from this device." : "Using verified artwork from release \(payload.sequence). \(message)", bytes: data, sha256: candidate.sha256, assetID: slot.assetId, mime: candidate.mime, pixelSize: size, accessibility: slot.accessibility)
                         }
                         guard index == 0, download else { continue }
                         let data = try await transport.get(ManifestVerifier.candidateURL(candidate, assetID: slot.assetId, config: configuration), maximumBytes: candidate.bytes, accept: candidate.mime)
@@ -116,7 +116,7 @@ public actor AssetClient {
                             throw AssetLibError.invalid("Artwork does not match the signed bytes, type, or dimensions.")
                         }
                         try await storage.saveAsset(data, hash: candidate.sha256)
-                        return .init(source: .remote, sequence: payload.sequence, message: "Downloaded and verified artwork.", bytes: data, sha256: candidate.sha256, assetID: slot.assetId, mime: candidate.mime, pixelSize: size)
+                        return .init(source: .remote, sequence: payload.sequence, message: "Downloaded and verified artwork.", bytes: data, sha256: candidate.sha256, assetID: slot.assetId, mime: candidate.mime, pixelSize: size, accessibility: slot.accessibility)
                     } catch { message = error.localizedDescription }
                 }
             } catch { message = error.localizedDescription }
@@ -124,6 +124,6 @@ public actor AssetClient {
         return fallback(message)
     }
     private func fallback(_ message: String) -> ResolvedAsset {
-        .init(source: .bundle, sequence: nil, message: "Using bundled artwork. \(message)", bytes: nil, sha256: nil, assetID: nil, mime: nil, pixelSize: nil)
+        .init(source: .bundle, sequence: nil, message: "Using bundled artwork. \(message)", bytes: nil, sha256: nil, assetID: nil, mime: nil, pixelSize: nil, accessibility: nil)
     }
 }
