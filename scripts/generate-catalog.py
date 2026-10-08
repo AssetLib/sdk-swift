@@ -50,7 +50,7 @@ def generate(catalog):
     lines += [f"    static let all: [AssetReference] = [{', '.join(refs)}]", "}", "", "@MainActor struct AppArtwork {", "    let store: AssetImageStore", "    var bundle: Bundle = .main"]
     for group, items in groups.items():
         accessor = group[0].lower() + group[1:]
-        lines += [f"    var `{accessor}`: `{group}` {{ `{group}`(store: store, bundle: bundle) }}", f"    struct `{group}` {{", "        let store: AssetImageStore", "        let bundle: Bundle"]
+        lines += [f"    var `{accessor}`: `{group}` {{ `{group}`(store: store, bundle: bundle) }}", f"    @MainActor struct `{group}` {{", "        let store: AssetImageStore", "        let bundle: Bundle"]
         for item in items:
             member = item["symbol"][1]
             lines.append(f'        var `{member}`: Image {{ store.image(for: AssetCatalog.`{group}`.`{member}`, fallback: Image("{item["fallbackImageName"]}", bundle: bundle)) }}')
