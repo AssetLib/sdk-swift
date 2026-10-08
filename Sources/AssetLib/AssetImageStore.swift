@@ -33,7 +33,8 @@ public final class AssetImageStore {
     public func image(for reference: AssetReference, fallback: Image) -> Image { images[reference] ?? fallback }
 
     /// Explicit lifecycle work; getters never start requests. A generation check blocks stale connection results.
-    public func refresh(_ references: [AssetReference]) async {
+    /// Supply physical pixel targets for known layouts; omitted entries use the logical reference size.
+    public func refresh(_ references: [AssetReference], targetPixels: [AssetReference: AssetPixelSize] = [:]) async {
         guard let client else { return }
         generation &+= 1
         let operation = generation
@@ -43,7 +44,7 @@ public final class AssetImageStore {
         guard generation == operation, !Task.isCancelled else { return }
         release = initial.sequence
         for reference in references {
-            let resolved = await client.resolve(reference, download: false)
+            let resolved = await client.resolve(reference, download: false, targetPixels: targetPixels[reference])
             guard generation == operation, !Task.isCancelled else { return }
             apply(resolved, for: reference)
         }
@@ -51,7 +52,7 @@ public final class AssetImageStore {
         guard generation == operation, !Task.isCancelled else { return }
         release = refreshed.sequence; lastError = refreshed.error
         for reference in references {
-            let resolved = await client.resolve(reference, download: refreshed.error == nil)
+            let resolved = await client.resolve(reference, download: refreshed.error == nil, targetPixels: targetPixels[reference])
             guard generation == operation, !Task.isCancelled else { return }
             apply(resolved, for: reference)
         }

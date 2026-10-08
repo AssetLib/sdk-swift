@@ -47,6 +47,8 @@ public actor FileAssetStorage: AssetStorage {
     }
     public func asset(for hash: String) throws -> Data? {
         guard matches(hash, hashPattern) else { throw AssetLibError.invalid("Invalid cache key.") }
+        // Preserve caches from the original WebP-only preview; bytes are verified by the client.
+        if let data = try boundedRead(directory.appendingPathComponent(hash + ".asset"), limit: AssetLimits.assetBytes) { return data }
         return try boundedRead(directory.appendingPathComponent(hash + ".webp"), limit: AssetLimits.assetBytes)
     }
     public func saveAsset(_ data: Data, hash: String) throws {
@@ -56,9 +58,9 @@ public actor FileAssetStorage: AssetStorage {
         defer { close(descriptor) }
         guard flock(descriptor, LOCK_EX) == 0 else { throw AssetLibError.invalid("Unable to lock asset cache.") }
         defer { flock(descriptor, LOCK_UN) }
-        try data.write(to: directory.appendingPathComponent(hash + ".webp"), options: .atomic)
+        try data.write(to: directory.appendingPathComponent(hash + ".asset"), options: .atomic)
         let entries = try files.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey])
-            .filter { $0.pathExtension == "webp" }
+            .filter { ["webp", "asset"].contains($0.pathExtension) }
             .map { url -> (URL, Int, Date) in
                 let info = try url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
                 return (url, info.fileSize ?? 0, info.contentModificationDate ?? .distantPast)

@@ -16,10 +16,10 @@ artwork.travel.coast
 
 ## Install
 
-Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.1.0-preview.2`, and choose the **AssetLib** product. Or use SwiftPM:
+Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.2.0-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
 
 ```swift
-.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.1.0-preview.2")
+.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.2.0-preview.1")
 ```
 
 The runnable [SwiftUI travel demo](https://github.com/AssetLib/demo-ios) includes bundled illustrations, generated accessors, and a connection sheet. It works before you create an account.
@@ -59,6 +59,32 @@ struct WelcomeView: View {
 
 Call `refresh` at explicit lifecycle points such as foregrounding, a refresh gesture, or a user action. There is no background polling. The store loads verified cached artwork first, then checks for a release. A generation token prevents old connection tasks from replacing a new connection's images. `disconnect()` immediately restores caller-provided fallbacks; it preserves durable release history to prevent accidental downgrade when reconnecting.
 
+## Choose a raster rendition
+
+The signed rendition extension supports still **PNG and WebP** output. New clients also validate SVG rendition metadata, but skip SVG: iOS uses a server-prepared raster fallback. This SDK does not import or render runtime SVG vectors.
+
+Supply a physical pixel target when your app knows its layout and display scale. A 320×240 point image on a 3× display requests 960×720 pixels:
+
+```swift
+await images.refresh(AssetCatalog.all, targetPixels: [
+    AssetCatalog.Travel.coast: AssetPixelSize(width: 960, height: 720)
+])
+
+// For apps using the delivery client without the SwiftUI store:
+let resolved = await client.resolve(
+    AssetCatalog.Travel.coast,
+    targetPixels: AssetPixelSize(width: 960, height: 720)
+)
+// resolved.mime, resolved.pixelSize, resolved.sha256, resolved.assetID,
+// and resolved.sequence describe the actual downloaded/cached artwork.
+```
+
+Omitting a target uses the generated reference's logical width and height. Targets must be positive integers no greater than 8192 per axis. They do not change the placement's logical layout contract. Native Image modifiers never initiate requests or infer dimensions for the SDK. One store retains one current image per reference; use the largest required target when a placement appears at several sizes in that store.
+
+The client first tries the smallest supported raster meeting both requested dimensions. If none is large enough, it tries the largest available raster. Equal areas sort by byte length, then hash; each failure advances to the next candidate. The original WebP slot is always the final compatibility candidate. The optional `supportedFormats:` client setting defaults to `[.webP, .png]`; `.webP` remains required, and duplicates are rejected.
+
+Existing WebP-only manifests and old `.webp` cache files still work. The new format-neutral cache verifies every entry before use. SDK **0.1.0-preview.2** continues to consume the legacy WebP slot from extended manifests; it cannot select PNG or size variants. A published source SVG is not evidence that native images remain vector-based.
+
 ## Generate typed references offline
 
 Copy `scripts/generate-catalog.py` and adapt [Examples/catalog.json](Examples/catalog.json) to your app. Each placement has a stable key, two-part Swift symbol, logical dimensions, and the name of a bundled fallback image in your asset catalog.
@@ -77,10 +103,10 @@ An existing placement can receive new compatible artwork without rebuilding the 
 - Delivery uses HTTPS, exact scoped paths, the same origin, no cookies or credential storage, no redirects, bounded streaming, and an 8-second request deadline by default.
 - Release sequences cannot decrease. Equal-sequence payload changes are rejected using byte equality, including Unicode-equivalent strings. Rollback is a new higher sequence pointing to earlier artwork.
 - State is re-read and signatures reverified per operation and after manifest downloads. Atomic disk commits use an OS lock and reject another client's newer state. Invalid durable state fails closed to bundled artwork.
-- Image length, SHA-256, WebP container, decode, and aspect ratio are validated. A current download failure can use verified cached artwork from a retained older release; older releases are never fetched as fallback.
+- Image length, SHA-256, PNG/WebP container, native decode, and dimensions are validated. Renditions must exactly match their declared physical dimensions; legacy WebP retains its logical aspect-ratio rule. A current download failure can use verified cached artwork from a retained older release; older releases are never fetched as fallback.
 - Limits: 256 KiB manifest, 8 MiB image, 100 slots, eight retained manifests, 3 MiB state, 50 MiB/100 disk cache entries. Native decoding additionally limits dimensions to 8,192 per axis and 16 megapixels; the image store keeps at most 32 images/64 MiB of decoded pixel buffers. Images retained by app views are outside that store budget.
 
-This preview handles still WebP artwork. It does not implement Figma import, experiments, usage analytics, automatic screen discovery, native Background Assets, push updates, or key rotation. A plain image cannot report whether it was visible, and layout modifiers do not tell the downloader a desired rendition.
+This preview handles still PNG/WebP artwork through signed rendition extension v1 and WebP legacy fallback. It does not implement Figma import, experiments, usage analytics, automatic screen discovery, native Background Assets, push updates, or key rotation. A plain image cannot report whether it was visible, and layout modifiers do not tell the downloader a desired rendition.
 
 ## Test
 
@@ -90,7 +116,7 @@ python3 scripts/test_codegen.py
 swift build -c release
 ```
 
-The committed test-only corpus contains signed interoperability cases shared with the JavaScript and Kotlin clients. Tests cover signatures, scope, malformed payloads, exact-byte equivocation, real ImageIO WebP decoding, mismatched layouts, rollback, corrupted bytes, offline restart, concurrent storage clients, and corrupt durable state.
+The committed test-only corpus contains signed interoperability cases shared with the JavaScript and Kotlin clients. Tests cover signatures, scope, malformed payloads, exact-byte equivocation, all 65 shared signed cases, four shared rendition selection scenarios, real ImageIO PNG/WebP decoding, exact rendition dimensions, target-size ranking, candidate failure, cache migration, mismatched layouts, rollback, corrupted bytes, offline restart, concurrent storage clients, and corrupt durable state.
 
 An optional read-only hosted test takes a path to your public configuration outside the repository:
 
@@ -98,7 +124,7 @@ An optional read-only hosted test takes a path to your public configuration outs
 ASSETLIB_PUBLIC_CONFIG_FILE=/absolute/path/to/public-config.json swift test --filter HostedAcceptance
 ```
 
-It checks a real signed release, downloads all three starter assets, decodes them natively, and verifies a restarted offline client uses the cache. It never publishes a release or prints the configuration. A macOS test pass does not establish execution on an iPhone; use the demo on a simulator or device for native UI validation.
+It checks a real signed release, downloads all three starter assets, decodes them natively, and verifies a restarted offline client uses the cache. It never publishes a release or prints the configuration. A live legacy WebP acceptance pass does not establish hosted PNG publication. A macOS test pass does not establish execution on an iPhone; use the demo on a simulator or device for native UI validation.
 
 ## Privacy and security
 

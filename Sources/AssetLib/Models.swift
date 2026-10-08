@@ -22,6 +22,17 @@ public struct AssetReference: Hashable, Codable, Sendable {
     public init(key: String, width: Int, height: Int) { self.key = key; self.width = width; self.height = height }
 }
 
+/// Physical pixels requested by the caller; layout modifiers do not change this value.
+public struct AssetPixelSize: Hashable, Sendable {
+    public let width: Int
+    public let height: Int
+    public init(width: Int, height: Int) { self.width = width; self.height = height }
+    var isValid: Bool { (1...8192).contains(width) && (1...8192).contains(height) }
+}
+
+/// Native formats supported by this SDK. SVG metadata is verified but never downloaded or rendered.
+public enum AssetFormat: String, Sendable { case webP = "image/webp", png = "image/png" }
+
 public struct AssetConfiguration: Codable, Sendable, Equatable {
     public let schemaVersion: Int
     public let orgId: String
@@ -71,6 +82,21 @@ struct ManifestPayload: Codable, Sendable {
     let sequence: Int
     let createdAt: String
     let slots: [ManifestSlot]
+    let renditionSchemaVersion: Int?
+
+    enum CodingKeys: String, CodingKey { case schemaVersion, orgId, appId, environment, sequence, createdAt, slots, renditionSchemaVersion }
+    init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try c.decode(Int.self, forKey: .schemaVersion)
+        orgId = try c.decode(String.self, forKey: .orgId)
+        appId = try c.decode(String.self, forKey: .appId)
+        environment = try c.decode(String.self, forKey: .environment)
+        sequence = try c.decode(Int.self, forKey: .sequence)
+        createdAt = try c.decode(String.self, forKey: .createdAt)
+        slots = try c.decode([ManifestSlot].self, forKey: .slots)
+        // Null is not absence: malformed extensions must fail closed.
+        renditionSchemaVersion = c.contains(.renditionSchemaVersion) ? try c.decode(Int.self, forKey: .renditionSchemaVersion) : nil
+    }
 }
 
 struct ManifestSlot: Codable, Sendable {
@@ -83,6 +109,49 @@ struct ManifestSlot: Codable, Sendable {
     let url: String
     let mime: String
     let bytes: Int
+    let renditions: [ManifestRendition]?
+
+    enum CodingKeys: String, CodingKey { case key, screen, width, height, assetId, sha256, url, mime, bytes, renditions }
+    init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        key = try c.decode(String.self, forKey: .key)
+        screen = try c.decode(String.self, forKey: .screen)
+        width = try c.decode(Int.self, forKey: .width)
+        height = try c.decode(Int.self, forKey: .height)
+        assetId = try c.decode(String.self, forKey: .assetId)
+        sha256 = try c.decode(String.self, forKey: .sha256)
+        url = try c.decode(String.self, forKey: .url)
+        mime = try c.decode(String.self, forKey: .mime)
+        bytes = try c.decode(Int.self, forKey: .bytes)
+        renditions = c.contains(.renditions) ? try c.decode([ManifestRendition].self, forKey: .renditions) : nil
+    }
+}
+
+struct ManifestRendition: Codable, Sendable {
+    let sha256: String
+    let url: String
+    let mime: String
+    let bytes: Int
+    let width: Int
+    let height: Int
+}
+
+struct AssetCandidate: Sendable {
+    let sha256: String
+    let url: String
+    let mime: String
+    let bytes: Int
+    let width: Int
+    let height: Int
+    let isLegacy: Bool
+    init(_ slot: ManifestSlot) {
+        sha256 = slot.sha256; url = slot.url; mime = slot.mime; bytes = slot.bytes
+        width = slot.width; height = slot.height; isLegacy = true
+    }
+    init(_ rendition: ManifestRendition) {
+        sha256 = rendition.sha256; url = rendition.url; mime = rendition.mime; bytes = rendition.bytes
+        width = rendition.width; height = rendition.height; isLegacy = false
+    }
 }
 
 struct PersistedState: Codable, Sendable {
@@ -99,6 +168,9 @@ public struct ResolvedAsset: Sendable {
     public let message: String
     public let bytes: Data?
     public let sha256: String?
+    public let assetID: String?
+    public let mime: String?
+    public let pixelSize: AssetPixelSize?
 }
 
 public struct RefreshResult: Sendable {

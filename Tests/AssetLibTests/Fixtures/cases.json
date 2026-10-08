@@ -219,6 +219,116 @@
       "file": "manifests/stateful/unicode-equivalent-seq2.json",
       "verification": "accept",
       "reason": "Stateless-valid; canonically equivalent Unicode is still different signed UTF-8 and must be rejected after sequence 2. Swift String equality is not byte equality."
+    },
+    {
+      "file": "manifests/valid-renditions-seq4.json",
+      "verification": "accept",
+      "reason": "Rendition extension with PNG sizes, sanitized SVG and full-size WebP; legacy fields unchanged."
+    },
+    {
+      "file": "manifests/valid-rendition-extension-legacy-slot.json",
+      "verification": "accept",
+      "reason": "Versioned extension may contain a slot from before original/rendition retention."
+    },
+    {
+      "file": "manifests/invalid/rendition-version.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-null-version.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-boolean-version.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-missing-version.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-null-array.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-empty-array.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-too-many.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-duplicate-hash.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-external-url.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-wrong-url-hash.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-query.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-fragment.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-mime.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-zero-width.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-fractional-width.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-boolean-width.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-huge-dimensions.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-aspect.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-bytes.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
+    },
+    {
+      "file": "manifests/invalid/rendition-svg-bytes.json",
+      "verification": "reject",
+      "reason": "Re-signed invalid rendition extension."
     }
   ],
   "stateful": [

@@ -1,0 +1,55 @@
+{
+  "manifest": "manifests/valid-renditions-seq4.json",
+  "files": [
+    {
+      "file": "assets/small.png",
+      "sha256": "0cd8e2637be76fd653fd7be69e7be136f0dab875c1974074f7d93f45e9f3df11"
+    },
+    {
+      "file": "assets/medium.png",
+      "sha256": "f1161de5047f03c4372512f5d050d653530c7c2f43501a7694f24145b4cba066"
+    },
+    {
+      "file": "assets/vector.svg",
+      "sha256": "a13b6efa6d92d52b19d5502aebffd59e6895dcaa2fd4598ed11e9ebc1b5edb18"
+    },
+    {
+      "file": "assets/coast.webp",
+      "sha256": "03fa6da42647d0dac7228a39bad28f5ea550ffcfef9a0872b5c685875e91a8fa"
+    }
+  ],
+  "selections": [
+    {
+      "width": 100,
+      "height": 75,
+      "mime": "image/png",
+      "sha256": "0cd8e2637be76fd653fd7be69e7be136f0dab875c1974074f7d93f45e9f3df11"
+    },
+    {
+      "width": 300,
+      "height": 225,
+      "mime": "image/png",
+      "sha256": "f1161de5047f03c4372512f5d050d653530c7c2f43501a7694f24145b4cba066"
+    },
+    {
+      "width": 1000,
+      "height": 750,
+      "mime": "image/webp",
+      "sha256": "03fa6da42647d0dac7228a39bad28f5ea550ffcfef9a0872b5c685875e91a8fa"
+    },
+    {
+      "width": 2400,
+      "height": 1800,
+      "mime": "image/webp",
+      "sha256": "03fa6da42647d0dac7228a39bad28f5ea550ffcfef9a0872b5c685875e91a8fa"
+    }
+  ],
+  "vector": {
+    "sha256": "a13b6efa6d92d52b19d5502aebffd59e6895dcaa2fd4598ed11e9ebc1b5edb18",
+    "url": "/api/delivery/11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222/assets/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/renditions/a13b6efa6d92d52b19d5502aebffd59e6895dcaa2fd4598ed11e9ebc1b5edb18",
+    "mime": "image/svg+xml",
+    "bytes": 193,
+    "width": 1200,
+    "height": 900
+  }
+}

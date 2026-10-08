@@ -33,7 +33,8 @@ enum ManifestVerifier {
         date.formatOptions = [.withInternetDateTime]
         guard payload.schemaVersion == 1, payload.orgId == config.orgId, payload.appId == config.appId,
               payload.environment == config.environment, (1...2_147_483_647).contains(payload.sequence),
-              fractional != nil || date.date(from: payload.createdAt) != nil, (1...100).contains(payload.slots.count) else {
+              fractional != nil || date.date(from: payload.createdAt) != nil, (1...100).contains(payload.slots.count),
+              payload.renditionSchemaVersion == nil || payload.renditionSchemaVersion == 1 else {
             throw AssetLibError.invalid("Unsupported or cross-app manifest payload.")
         }
         var keys = Set<String>()
@@ -44,6 +45,25 @@ enum ManifestVerifier {
                 throw AssetLibError.invalid("Invalid or unsupported placement in manifest.")
             }
             _ = try assetURL(slot, config: config)
+            if let renditions = slot.renditions {
+                guard payload.renditionSchemaVersion == 1, (1...7).contains(renditions.count) else {
+                    throw AssetLibError.invalid("Unsupported rendition extension or count.")
+                }
+                var hashes = Set<String>()
+                for rendition in renditions {
+                    let ratio = Double(slot.width) / Double(slot.height)
+                    guard matches(rendition.sha256, hashPattern), hashes.insert(rendition.sha256).inserted,
+                          ["image/webp", "image/png", "image/svg+xml"].contains(rendition.mime),
+                          (1...AssetLimits.assetBytes).contains(rendition.bytes),
+                          rendition.mime != "image/svg+xml" || rendition.bytes <= 262_144,
+                          (1...8192).contains(rendition.width), (1...8192).contains(rendition.height),
+                          rendition.width * rendition.height <= AssetLimits.decodedPixels,
+                          abs(Double(rendition.width) / Double(rendition.height) - ratio) / ratio <= 0.02 else {
+                        throw AssetLibError.invalid("Invalid rendition metadata.")
+                    }
+                    _ = try candidateURL(AssetCandidate(rendition), assetID: slot.assetId, config: config)
+                }
+            }
         }
         return payload
     }
@@ -63,26 +83,55 @@ enum ManifestVerifier {
     }
 
     static func assetURL(_ slot: ManifestSlot, config: AssetConfiguration) throws -> URL {
+        try candidateURL(AssetCandidate(slot), assetID: slot.assetId, config: config)
+    }
+
+    static func candidateURL(_ candidate: AssetCandidate, assetID: String, config: AssetConfiguration) throws -> URL {
+        let path = "/api/delivery/\(config.orgId)/\(config.appId)/assets/\(assetID)" + (candidate.isLegacy ? "" : "/renditions/\(candidate.sha256)")
         guard let base = URL(string: config.manifestUrl), let baseParts = URLComponents(url: base, resolvingAgainstBaseURL: true),
-              let url = URL(string: slot.url, relativeTo: base)?.absoluteURL,
+              let url = URL(string: candidate.url, relativeTo: base)?.absoluteURL,
               let parts = URLComponents(url: url, resolvingAgainstBaseURL: true), parts.scheme == baseParts.scheme,
               parts.host?.lowercased() == baseParts.host?.lowercased(), (parts.port ?? 443) == (baseParts.port ?? 443),
               parts.user == nil, parts.password == nil, parts.query == nil, parts.fragment == nil,
-              parts.percentEncodedPath == "/api/delivery/\(config.orgId)/\(config.appId)/assets/\(slot.assetId)" else {
+              parts.percentEncodedPath == path else {
             throw AssetLibError.invalid("Asset URL is outside the configured app.")
         }
         return url
     }
 
     static func validAsset(_ data: Data, slot: ManifestSlot) -> Bool {
-        guard data.count == slot.bytes, data.count <= AssetLimits.assetBytes, hashBytes(data) == slot.sha256,
-              data.count >= 12, data.prefix(4) == Data("RIFF".utf8), data[8..<12] == Data("WEBP".utf8),
+        decodedSize(data, candidate: AssetCandidate(slot)) != nil
+    }
+
+    static func decodedSize(_ data: Data, candidate: AssetCandidate) -> AssetPixelSize? {
+        let knownType: Bool
+        switch candidate.mime {
+        case "image/webp": knownType = data.count >= 12 && data.prefix(4) == Data("RIFF".utf8) && data[8..<12] == Data("WEBP".utf8)
+        case "image/png": knownType = data.prefix(8) == Data([137, 80, 78, 71, 13, 10, 26, 10])
+        default: knownType = false
+        }
+        guard knownType, data.count == candidate.bytes, data.count <= AssetLimits.assetBytes, hashBytes(data) == candidate.sha256,
               let source = CGImageSourceCreateWithData(data as CFData, nil), CGImageSourceGetCount(source) == 1,
               let info = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
               let width = info[kCGImagePropertyPixelWidth] as? Int, let height = info[kCGImagePropertyPixelHeight] as? Int,
               width > 0, height > 0, width <= 8192, height <= 8192, width * height <= AssetLimits.decodedPixels,
-              width * slot.height == height * slot.width,
-              CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary) != nil else { return false }
-        return true
+              candidate.isLegacy ? width * candidate.height == height * candidate.width : (width == candidate.width && height == candidate.height),
+              CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary) != nil else { return nil }
+        return .init(width: width, height: height)
+    }
+
+    static func candidates(_ slot: ManifestSlot, target: AssetPixelSize, formats: [AssetFormat]) -> [AssetCandidate] {
+        let supported = Set(formats.map(\.rawValue))
+        let rasters = (slot.renditions ?? []).filter { supported.contains($0.mime) }.map(AssetCandidate.init)
+        let ordered = rasters.sorted { a, b in
+            let aFits = a.width >= target.width && a.height >= target.height
+            let bFits = b.width >= target.width && b.height >= target.height
+            if aFits != bFits { return aFits }
+            let aArea = a.width * a.height, bArea = b.width * b.height
+            if aArea != bArea { return aFits ? aArea < bArea : aArea > bArea }
+            if a.bytes != b.bytes { return a.bytes < b.bytes }
+            return a.sha256 < b.sha256
+        }
+        return ordered + [AssetCandidate(slot)]
     }
 }
