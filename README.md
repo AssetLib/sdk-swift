@@ -26,7 +26,7 @@ The runnable [SwiftUI travel demo](https://github.com/AssetLib/demo-ios) include
 
 ## Connect a workspace
 
-Create a workspace at the [Assetlib console](https://assetlib-console.vercel.app), then copy its **public SDK configuration**. It contains a public verification key and delivery URL, not an editor credential.
+Create a workspace at the [Assetlib console](https://console.assetlib.dev), then copy its **public SDK configuration**. It contains a public verification key and delivery URL, not an editor credential.
 
 ```swift
 let configuration = try AssetConfiguration.parse(publicConfigurationData)
@@ -179,7 +179,7 @@ An existing placement can receive new compatible artwork without rebuilding the 
 - Image length, SHA-256, PNG/WebP container, native decode, and dimensions are validated. Renditions must exactly match their declared physical dimensions; legacy WebP retains its logical aspect-ratio rule. A current download failure can use verified cached artwork from a retained older release; older releases are never fetched as fallback.
 - Limits: 256 KiB manifest, 8 MiB image, 100 slots, eight retained manifests, 3 MiB state, 50 MiB/100 disk cache entries. Native decoding additionally limits dimensions to 8,192 per axis and 16 megapixels; the image store keeps at most 32 images/64 MiB of decoded pixel buffers. Images retained by app views are outside that store budget.
 
-This preview handles still PNG/WebP artwork through signed rendition extension v1 and WebP legacy fallback. It does not implement Figma import, built-in experiment assignment or tracking, usage analytics, automatic screen discovery, native Background Assets, push updates, or key rotation. A plain image cannot report whether it was visible, and layout modifiers do not tell the downloader a desired rendition.
+This preview handles still PNG/WebP artwork through signed rendition extension v1 and WebP legacy fallback. It does not implement Figma import, built-in experiment assignment or tracking, usage analytics, automatic screen discovery, native Background Assets, or push updates. Key rotation works through the overlapping `pinnedPublicKeys` set described above; the app must already trust the new key before the console activates it. A plain image cannot report whether it was visible, and layout modifiers do not tell the downloader a desired rendition.
 
 ## Test
 

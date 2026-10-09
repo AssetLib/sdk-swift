@@ -8,8 +8,18 @@
 - Adds an optional `decide` callback for the arm, evaluated outside the client gate with a bounded wait; invalid results resolve control and say why; the client re-resolves against current durable state afterwards.
 - Derives the storage namespace from origin, org, app, and environment only, with a one-time verified migration from the previous formula, so the replay floor and cache survive the legacy to environment URL switch and pinned key-set changes. Accepts a pinned key set.
 - `AssetImageStore` carries an appearance and per-reference arm overrides.
+- Includes the localized descriptions released as `0.2.1-preview.1`, which was tagged from a separate branch.
 
 Validation: 48 Swift tests in 5 suites on macOS against the shared corpus of 100 signed manifest cases and 18 resolution entries.
+
+## 0.2.1-preview.1
+
+- Adds optional localized descriptions to verified asset results, paired with the actual remote or cached release. Historical fallback never borrows descriptions from a newer image.
+- Adds `AssetAccessibility` locale selection and optional `bundledAccessibility` in offline catalogs.
+- Adds native `AssetArtwork` snapshots and generated helpers while retaining native `Image` properties and app-owned labels/decoration. Informative usages can keep the bundle when a remote image has no description.
+- Adds compiled decorative/informative examples, deterministic generator validation and safe string escaping.
+
+Validation: 82 signed-manifest cases, focused cache/localization/fallback tests, four code-generation tests, and a Swift release build. Manual iOS VoiceOver acceptance is not established by these checks. This scoped release excludes unrelated animation fixture work. The tag sits on a branch that is not an ancestor of `main`; `0.3.0-preview.1` carries the same changes.
 
 ## 0.2.0-preview.1
 

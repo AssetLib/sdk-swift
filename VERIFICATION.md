@@ -1,3 +1,15 @@
+# 0.3.0-preview.1 — October 9, 2026 (ET)
+
+Release `0.3.0-preview.1` (commit `d9e6c65`). Checked again on main on October 9, 2026 with Apple Swift 6.4 on macOS:
+
+- `swift test`: 48 tests in 5 suites passed. The suite loads the shared corpus of 100 signed manifest cases (production and staging configurations), 18 variant resolution entries, 6 stateful cases, 2 byte-failure cases, and 4 rendition selections. The optional hosted test is skipped without `ASSETLIB_PUBLIC_CONFIG_FILE`.
+- `python3 scripts/test_codegen.py`: 4 tests passed.
+- `swift build -c release`: passed, including the `AssetLibExample` target.
+- GitHub Actions CI passed for the release commit ([run 37888072785](https://github.com/AssetLib/sdk-swift/actions/runs/37888072785)).
+- This release also contains the localized descriptions first released as `0.2.1-preview.1` from a separate branch.
+
+Not established: no iOS simulator or device run, no VoiceOver check, and no hosted publish, refresh and rollback run with a native app on this version. iOS compilation is covered by the separate demo-ios app.
+
 # Native environments and variant cells (H1) — October 8, 2026 (ET)
 
 Local source checkout only; no dependency, package version, publication, or hosted changes. Existing uncommitted accessibility work and H0 fixtures were preserved.
@@ -15,16 +27,16 @@ Local source checkout only; no dependency, package version, publication, or host
 The unmodified `swift build && swift test` exited 1 with:
 
 ```text
-<unknown>:0: error: error opening '/Users/tylerzhao/.cache/clang/ModuleCache/Swift-7JL1KBZ3A6V3.swiftmodule' for output: /Users/tylerzhao/.cache/clang/ModuleCache: Operation not permitted
+<unknown>:0: error: error opening '~/.cache/clang/ModuleCache/Swift-7JL1KBZ3A6V3.swiftmodule' for output: ~/.cache/clang/ModuleCache: Operation not permitted
 <unknown>:0: error: unable to load standard library for target 'arm64-apple-macosx14.0'
 ```
 
 The successful build and test invocation used:
 
 ```sh
-export CLANG_MODULE_CACHE_PATH=/tmp/assetlib-h1-module-cache
-export SWIFTPM_MODULECACHE_OVERRIDE=/tmp/assetlib-h1-module-cache
-swift build --disable-sandbox --cache-path /tmp/assetlib-h1-swiftpm-cache --config-path /tmp/assetlib-h1-swiftpm-config --security-path /tmp/assetlib-h1-swiftpm-security && swift test --disable-sandbox --cache-path /tmp/assetlib-h1-swiftpm-cache --config-path /tmp/assetlib-h1-swiftpm-config --security-path /tmp/assetlib-h1-swiftpm-security
+export CLANG_MODULE_CACHE_PATH="$TMPDIR/assetlib-module-cache"
+export SWIFTPM_MODULECACHE_OVERRIDE="$TMPDIR/assetlib-module-cache"
+swift build --disable-sandbox --cache-path "$TMPDIR/assetlib-swiftpm-cache" --config-path "$TMPDIR/assetlib-swiftpm-config" --security-path "$TMPDIR/assetlib-swiftpm-security" && swift test --disable-sandbox --cache-path "$TMPDIR/assetlib-swiftpm-cache" --config-path "$TMPDIR/assetlib-swiftpm-config" --security-path "$TMPDIR/assetlib-swiftpm-security"
 ```
 
 Final output summary (exit 0):
@@ -36,7 +48,7 @@ Build complete! (2.92 sec)
 ✔ Test run with 29 tests in 4 suites passed after 0.277 seconds.
 ```
 
-The full, unedited command/output transcript, including the earlier test compilation failure, was retained at `/tmp/assetlib-h1-verification.log` for the workstream report.
+The full command and output transcript, including the earlier test compilation failure, was kept outside this repository.
 
 # Accessibility verification — October 8, 2026 (ET)
 
