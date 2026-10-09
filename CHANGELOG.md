@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.1-preview.1
+
+- Accepts configurations containing only a pinned key set. The existing non-optional `pinnedPublicKey` property contains its first member; manifests signed by any member remain trusted.
+- Codable encoding preserves the supplied single-pin field's presence, preventing a compatibility fallback from inflating set-only JSON past its byte limit. Explicit non-first single pins and the entire trust set survive round trips.
+- Rejects explicit nulls in known configuration fields, `keyId` without an explicit single pin, and `keyIds` whose values, count, or order differ from the derived IDs. Duplicate pins, empty or oversized sets, invalid Ed25519 SPKI PEM, pins over 256 UTF-8 bytes, and JSON over 4096 bytes remain rejected. Unknown fields count toward the JSON byte limit.
+- Runs the generated shared public-configuration corpus, including signature checks for the second trusted key and an untrusted key.
+
+Validation: On 2026-10-09, 51 Swift test functions passed on macOS and 1 optional hosted test was skipped (52 total across 5 suites, as Swift Testing reports). This includes 43 shared public-configuration cases, 39 associated signature expectations, and 100 existing signed manifest cases. All 4 code-generation tests and the release build passed. Swift commands used the documented temporary-cache sandbox workaround. No tag or release was published.
+
 ## 0.3.0-preview.1
 
 - Accepts a `staging` environment in the public configuration with the environment-scoped manifest path; verification keeps exact equality with the signed payload.

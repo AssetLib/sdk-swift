@@ -1,3 +1,25 @@
+# 0.3.1-preview.1 preparation — 2026-10-09
+
+Uncommitted source validation on macOS. No tag, push, or publication.
+
+- Before the parser change, both new tests failed with `DecodingError.keyNotFound` for `pinnedPublicKey` in set-only configurations.
+- A focused serialization regression reproduced an accepted 4096-byte set-only configuration expanding to 4308 bytes and then failing to parse. The custom encoder fixed it while preserving an explicit non-first single pin; both focused tests then passed.
+- After the final changes, 51 test functions passed and 1 optional hosted test was skipped (52 total across 5 suites). Swift Testing summarizes this as `Test run with 52 tests in 5 suites passed`. The shared configuration runner checked all 43 generated cases, compact encode/decode round trips for accepted cases, and 39 envelope verification expectations. The existing 100 signed manifest cases also passed.
+- `python3 scripts/test_codegen.py`: `Ran 4 tests`, `OK`.
+- `swift build -c release`: `Build complete!`, including `AssetLibExample`.
+- All 180 vendored corpus files were compared byte-for-byte with the generated source; every `SHA256SUMS` entry matched. The local fixture `README.txt` was retained.
+- `git diff --check` passed.
+
+The initial plain `swift test` attempt stopped before compilation because the default Clang module cache was not writable. The successful gate sequence used the existing documented workaround below. `SWIFT_CHECK_ROOT` represents the local temporary directory used for cache, configuration, and security files; no package settings changed.
+
+```sh
+CLANG_MODULE_CACHE_PATH="$SWIFT_CHECK_ROOT/module-cache" SWIFTPM_MODULECACHE_OVERRIDE="$SWIFT_CHECK_ROOT/module-cache" swift test --disable-sandbox --cache-path "$SWIFT_CHECK_ROOT/cache" --config-path "$SWIFT_CHECK_ROOT/config" --security-path "$SWIFT_CHECK_ROOT/security"
+python3 scripts/test_codegen.py
+CLANG_MODULE_CACHE_PATH="$SWIFT_CHECK_ROOT/module-cache" SWIFTPM_MODULECACHE_OVERRIDE="$SWIFT_CHECK_ROOT/module-cache" swift build -c release --disable-sandbox --cache-path "$SWIFT_CHECK_ROOT/cache" --config-path "$SWIFT_CHECK_ROOT/config" --security-path "$SWIFT_CHECK_ROOT/security"
+```
+
+These are macOS unit, code-generation, and build checks. No simulator, device, VoiceOver, or hosted acceptance was run.
+
 # 0.3.0-preview.1 — October 9, 2026 (ET)
 
 Release `0.3.0-preview.1` (commit `d9e6c65`). Checked again on main on October 9, 2026 with Apple Swift 6.4 on macOS:

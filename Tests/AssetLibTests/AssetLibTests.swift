@@ -17,11 +17,19 @@ private struct InteropCases: Decodable {
     struct Manifest: Decodable { let file: String; let verification: String; let config: String? }
     struct Stateful: Decodable { let initialState: String; let next: String; let expected: String }
     struct ByteFailure: Decodable { let manifest: String; let body: String; let reason: String }
+    struct PublicConfig: Decodable {
+        struct Envelope: Decodable { let file: String; let verification: String }
+        let file: String
+        let parsing: String
+        let utf8Bytes: Int
+        let envelopes: [Envelope]?
+    }
     let config: String
     let configs: [String: String]
     let manifests: [Manifest]
     let stateful: [Stateful]
     let byteFailures: [ByteFailure]
+    let publicConfigs: [PublicConfig]
 
     func configuration(_ name: String? = nil) throws -> AssetConfiguration {
         let key = name ?? "production"
@@ -50,6 +58,80 @@ private actor FixtureTransport: AssetTransport {
 }
 
 @Suite struct ProtocolTests {
+    @Test func sharedPublicConfigurationCases() throws {
+        let cases = try JSONDecoder().decode(InteropCases.self, from: fixture("cases.json"))
+        #expect(cases.publicConfigs.count == 43)
+        for entry in cases.publicConfigs {
+            let data = try fixture(entry.file)
+            #expect(data.count == entry.utf8Bytes, "\(entry.file)")
+            if entry.parsing == "reject" {
+                #expect(throws: (any Error).self, "\(entry.file)") { _ = try AssetConfiguration.parse(data) }
+                continue
+            }
+            #expect(entry.parsing == "accept", "\(entry.file)")
+            let configuration = try AssetConfiguration.parse(data)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.withoutEscapingSlashes]
+            let encoded = try encoder.encode(configuration)
+            #expect(encoded.count <= 4096, "\(entry.file)")
+            #expect(try AssetConfiguration.parse(encoded) == configuration, "\(entry.file)")
+            for check in entry.envelopes ?? [] {
+                let envelope = try JSONDecoder().decode(SignedManifest.self, from: fixture(check.file))
+                if check.verification == "accept" {
+                    #expect(throws: Never.self, "\(entry.file): \(check.file)") {
+                        _ = try ManifestVerifier.verify(envelope, config: configuration)
+                    }
+                } else {
+                    #expect(check.verification == "reject")
+                    #expect(throws: AssetLibError.self, "\(entry.file): \(check.file)") {
+                        _ = try ManifestVerifier.verify(envelope, config: configuration)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func setOnlyConfigurationKeepsNonoptionalPrimaryAndRoundTrips() throws {
+        let configuration = try AssetConfiguration.parse(fixture("public-config/key-ids-matching.json"))
+        let primary: String = configuration.pinnedPublicKey
+        #expect(primary == configuration.pinnedPublicKeys?.first)
+        let encoded = try JSONEncoder().encode(configuration)
+        #expect(try AssetConfiguration.parse(encoded) == configuration)
+    }
+
+    @Test func setOnlyConfigurationAtByteLimitRoundTripsWithoutAddingASinglePin() throws {
+        var object = try JSONSerialization.jsonObject(with: fixture("public-config/sixteen-keys.json")) as! [String: Any]
+        object.removeValue(forKey: "keyIds")
+        object["pinnedPublicKeys"] = (object["pinnedPublicKeys"] as! [String]).map {
+            $0.replacingOccurrences(of: "-----END PUBLIC KEY-----", with: String(repeating: "\n", count: 57) + "-----END PUBLIC KEY-----")
+        }
+        object["unknownPadding"] = ""
+        let unpadded = try JSONSerialization.data(withJSONObject: object)
+        let remaining = 4096 - unpadded.count
+        try #require(remaining >= 0)
+        object["unknownPadding"] = String(repeating: "x", count: remaining)
+        let input = try JSONSerialization.data(withJSONObject: object)
+        #expect(input.count == 4096)
+        let configuration = try AssetConfiguration.parse(input)
+        let encoded = try JSONEncoder().encode(configuration)
+        #expect(encoded.count <= 4096)
+        let encodedObject = try JSONSerialization.jsonObject(with: encoded) as! [String: Any]
+        #expect(encodedObject["pinnedPublicKey"] == nil)
+        #expect(try AssetConfiguration.parse(encoded) == configuration)
+    }
+
+    @Test func configurationEncodingPreservesAnExplicitNonFirstSinglePin() throws {
+        var object = try JSONSerialization.jsonObject(with: fixture("public-config/set-only.json")) as! [String: Any]
+        let pins = object["pinnedPublicKeys"] as! [String]
+        object["pinnedPublicKey"] = pins[1]
+        let configuration = try AssetConfiguration.parse(JSONSerialization.data(withJSONObject: object))
+        let encoded = try JSONEncoder().encode(configuration)
+        let encodedObject = try JSONSerialization.jsonObject(with: encoded) as! [String: Any]
+        #expect(encodedObject["pinnedPublicKey"] as? String == pins[1])
+        #expect(encodedObject["pinnedPublicKeys"] as? [String] == pins)
+        #expect(try AssetConfiguration.parse(encoded) == configuration)
+    }
+
     @Test func sharedInteropManifestCases() throws {
         let cases = try JSONDecoder().decode(InteropCases.self, from: fixture("cases.json"))
         for entry in cases.manifests {

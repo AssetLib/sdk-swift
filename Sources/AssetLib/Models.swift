@@ -47,17 +47,61 @@ public struct AssetConfiguration: Codable, Sendable, Equatable {
     public let appId: String
     public let environment: String
     public let manifestUrl: String
+    /// The explicit single pin, or the first member when the JSON supplies only `pinnedPublicKeys`.
     public let pinnedPublicKey: String
-    /// Optional overlapping trust set for key rotation. It must include `pinnedPublicKey`.
+    /// Optional overlapping trust set of 1–16 distinct exact PEM strings, including any explicit single pin.
     public let pinnedPublicKeys: [String]?
     public let keyId: String?
+    /// Optional derived IDs matching the trusted pins in length and order.
+    public let keyIds: [String]?
+    private let hasExplicitSinglePin: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion, orgId, appId, environment, manifestUrl, pinnedPublicKey, pinnedPublicKeys, keyId, keyIds
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try c.decode(Int.self, forKey: .schemaVersion)
+        orgId = try c.decode(String.self, forKey: .orgId)
+        appId = try c.decode(String.self, forKey: .appId)
+        environment = try c.decode(String.self, forKey: .environment)
+        manifestUrl = try c.decode(String.self, forKey: .manifestUrl)
+        // Presence plus decode rejects explicit nulls rather than treating them as omission.
+        hasExplicitSinglePin = c.contains(.pinnedPublicKey)
+        let single = c.contains(.pinnedPublicKey) ? try c.decode(String.self, forKey: .pinnedPublicKey) : nil
+        pinnedPublicKeys = c.contains(.pinnedPublicKeys) ? try c.decode([String].self, forKey: .pinnedPublicKeys) : nil
+        keyId = c.contains(.keyId) ? try c.decode(String.self, forKey: .keyId) : nil
+        keyIds = c.contains(.keyIds) ? try c.decode([String].self, forKey: .keyIds) : nil
+        guard keyId == nil || single != nil else {
+            throw AssetLibError.invalid("Signing key ID requires an explicit single pinned public key.")
+        }
+        guard let primary = single ?? pinnedPublicKeys?.first else {
+            throw AssetLibError.invalid("A pinned public key or key set is required.")
+        }
+        pinnedPublicKey = primary
+        try validate()
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(schemaVersion, forKey: .schemaVersion)
+        try c.encode(orgId, forKey: .orgId)
+        try c.encode(appId, forKey: .appId)
+        try c.encode(environment, forKey: .environment)
+        try c.encode(manifestUrl, forKey: .manifestUrl)
+        // Do not duplicate the compatibility fallback into set-only JSON near its byte limit.
+        // Preserve an explicit single pin even when it is not the first set member.
+        if hasExplicitSinglePin { try c.encode(pinnedPublicKey, forKey: .pinnedPublicKey) }
+        try c.encodeIfPresent(pinnedPublicKeys, forKey: .pinnedPublicKeys)
+        try c.encodeIfPresent(keyId, forKey: .keyId)
+        try c.encodeIfPresent(keyIds, forKey: .keyIds)
+    }
 
     /// Accept the public JSON exported by the console. Never pass editor tokens or private keys.
     public static func parse(_ json: Data) throws -> Self {
         guard json.count <= 4096 else { throw AssetLibError.invalid("Public configuration is too large.") }
-        let value = try JSONDecoder().decode(Self.self, from: json)
-        try value.validate()
-        return value
+        return try JSONDecoder().decode(Self.self, from: json)
     }
 
     public func validate() throws {
@@ -70,6 +114,10 @@ public struct AssetConfiguration: Codable, Sendable, Equatable {
             _ = try ManifestVerifier.rawPublicKey(key)
         }
         guard keyId == nil || keyId == signingKeyID else { throw AssetLibError.invalid("Signing key ID does not match the pinned key.") }
+        let derivedIDs = trustedPublicKeys.map { String(hashBytes(Data($0.utf8)).prefix(16)) }
+        guard keyIds == nil || keyIds == derivedIDs else {
+            throw AssetLibError.invalid("Signing key IDs do not match the pinned key set in length and order.")
+        }
         let deliveryPath = "/api/delivery/\(orgId)/\(appId)"
         let environmentPath = "\(deliveryPath)/environments/\(environment)/manifest"
         guard let parts = URLComponents(string: manifestUrl), parts.scheme == "https", let host = parts.host, !host.isEmpty,

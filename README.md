@@ -16,10 +16,10 @@ artwork.travel.coast
 
 ## Install
 
-Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.3.0-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
+Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.3.1-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
 
 ```swift
-.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.3.0-preview.1")
+.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.3.1-preview.1")
 ```
 
 The runnable [SwiftUI travel demo](https://github.com/AssetLib/demo-ios) includes bundled illustrations, generated accessors, and a connection sheet. It works before you create an account.
@@ -92,7 +92,9 @@ Resolution tries `(arm, appearance)`, `(arm, any)`, `(control, appearance)`, the
 
 Public configuration accepts `staging` or `production` and requires the signed payload to match exactly. Use the console's environment-specific configuration: `/api/delivery/{orgId}/{appId}/environments/{environment}/manifest`. The legacy `/api/delivery/{orgId}/{appId}/manifest` path is production-only. Durable storage is scoped to the normalized manifest origin, organization, app, and environment. Key changes and switches between the two production URL forms preserve release history, the replay floor, and cached artwork; staging and production remain isolated. On first state access (including `initialize`), file storage verifies and migrates state and referenced cached bytes from the previous full-URL/single-key namespace. Unverifiable legacy state is left untouched. Once the new namespace is used, legacy state is never imported again.
 
-Public JSON may include `pinnedPublicKeys`, an overlapping trust set that includes the existing `pinnedPublicKey` primary. Omit it to retain single-key behavior. During rotation, keep all keys needed to verify retained releases in this set; verification checks every retained signature against the current trust set. Removing a required key makes existing state fail closed to the bundle.
+Public JSON must supply a single `pinnedPublicKey` or `pinnedPublicKeys` containing 1–16 distinct exact PEM strings. Each pin must be Ed25519 SPKI PEM and at most 256 UTF-8 bytes. If both fields appear, the single pin must belong to the set. Optional `keyId` requires an explicit single pin; optional `keyIds` must match the derived IDs in length and order. Each ID is the first 16 hexadecimal characters of SHA-256 of the exact PEM. Known fields reject explicit nulls. Unknown fields are ignored but count toward the 4096-byte JSON limit, including whitespace. For source compatibility, `AssetConfiguration.pinnedPublicKey` remains a non-optional `String`; with a set-only configuration it contains the first pin in the set. Codable encoding preserves whether the single pin was explicitly supplied. Use `JSONEncoder.outputFormatting = [.withoutEscapingSlashes]` for compact JSON when re-encoding near the byte limit; additional whitespace or escaping counts toward the same bound.
+
+During rotation, keep all keys needed to verify retained releases in the set; verification checks every retained signature against the current trust set. Removing a required key makes existing state fail closed to the bundle.
 
 ## Accessibility
 

@@ -610,6 +610,448 @@
     "production": "config.json",
     "staging": "config-staging.json"
   },
+  "publicConfigs": [
+    {
+      "file": "public-config/single-only.json",
+      "parsing": "accept",
+      "reason": "Legacy single pin and matching keyId.",
+      "utf8Bytes": 450,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/second.json",
+          "verification": "reject"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/single-without-id.json",
+      "parsing": "accept",
+      "reason": "Single pin does not require keyId.",
+      "utf8Bytes": 423,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/second.json",
+          "verification": "reject"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/set-only.json",
+      "parsing": "accept",
+      "reason": "Set-only configuration; keyIds may be absent.",
+      "utf8Bytes": 545,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/second.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/set-one-key.json",
+      "parsing": "accept",
+      "reason": "A set may contain exactly one key.",
+      "utf8Bytes": 426,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/second.json",
+          "verification": "reject"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/both-membership.json",
+      "parsing": "accept",
+      "reason": "Explicit single pin belongs to set; second member signatures are also trusted.",
+      "utf8Bytes": 758,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/second.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/single-not-in-set.json",
+      "parsing": "reject",
+      "reason": "Single pin must belong to set.",
+      "utf8Bytes": 758
+    },
+    {
+      "file": "public-config/key-id-without-single.json",
+      "parsing": "reject",
+      "reason": "keyId requires an explicit single pin, even when it matches the first set member.",
+      "utf8Bytes": 572
+    },
+    {
+      "file": "public-config/single-wrong-id.json",
+      "parsing": "reject",
+      "reason": "keyId must match the exact single PEM.",
+      "utf8Bytes": 450
+    },
+    {
+      "file": "public-config/key-ids-matching.json",
+      "parsing": "accept",
+      "reason": "Ordered derived IDs match set-only pins.",
+      "utf8Bytes": 594,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/second.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/key-ids-mismatched.json",
+      "parsing": "reject",
+      "reason": "Each keyIds entry must match the corresponding exact PEM.",
+      "utf8Bytes": 594
+    },
+    {
+      "file": "public-config/key-ids-reordered.json",
+      "parsing": "reject",
+      "reason": "keyIds order must match pins.",
+      "utf8Bytes": 594
+    },
+    {
+      "file": "public-config/key-ids-too-short.json",
+      "parsing": "reject",
+      "reason": "keyIds cannot omit a pin.",
+      "utf8Bytes": 575
+    },
+    {
+      "file": "public-config/key-ids-too-long.json",
+      "parsing": "reject",
+      "reason": "keyIds cannot include extra entries.",
+      "utf8Bytes": 613
+    },
+    {
+      "file": "public-config/single-key-ids.json",
+      "parsing": "accept",
+      "reason": "keyIds can describe the implicit one-key set.",
+      "utf8Bytes": 480,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/second.json",
+          "verification": "reject"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/duplicate-pins.json",
+      "parsing": "reject",
+      "reason": "Exact duplicate PEM pins are forbidden.",
+      "utf8Bytes": 545
+    },
+    {
+      "file": "public-config/no-pins.json",
+      "parsing": "reject",
+      "reason": "At least one pin is required.",
+      "utf8Bytes": 286
+    },
+    {
+      "file": "public-config/empty-set.json",
+      "parsing": "reject",
+      "reason": "A supplied set must contain at least one key.",
+      "utf8Bytes": 308
+    },
+    {
+      "file": "public-config/empty-set-with-single.json",
+      "parsing": "reject",
+      "reason": "An explicit single pin cannot rescue an empty supplied set.",
+      "utf8Bytes": 472
+    },
+    {
+      "file": "public-config/null-schemaVersion.json",
+      "parsing": "reject",
+      "reason": "Explicit null schemaVersion is not absence.",
+      "utf8Bytes": 761
+    },
+    {
+      "file": "public-config/null-orgId.json",
+      "parsing": "reject",
+      "reason": "Explicit null orgId is not absence.",
+      "utf8Bytes": 724
+    },
+    {
+      "file": "public-config/null-appId.json",
+      "parsing": "reject",
+      "reason": "Explicit null appId is not absence.",
+      "utf8Bytes": 724
+    },
+    {
+      "file": "public-config/null-environment.json",
+      "parsing": "reject",
+      "reason": "Explicit null environment is not absence.",
+      "utf8Bytes": 750
+    },
+    {
+      "file": "public-config/null-manifestUrl.json",
+      "parsing": "reject",
+      "reason": "Explicit null manifestUrl is not absence.",
+      "utf8Bytes": 631
+    },
+    {
+      "file": "public-config/null-pinnedPublicKey.json",
+      "parsing": "reject",
+      "reason": "Explicit null pinnedPublicKey is not absence.",
+      "utf8Bytes": 644
+    },
+    {
+      "file": "public-config/null-pinnedPublicKeys.json",
+      "parsing": "reject",
+      "reason": "Explicit null pinnedPublicKeys is not absence.",
+      "utf8Bytes": 523
+    },
+    {
+      "file": "public-config/null-keyId.json",
+      "parsing": "reject",
+      "reason": "Explicit null keyId is not absence.",
+      "utf8Bytes": 744
+    },
+    {
+      "file": "public-config/null-keyIds.json",
+      "parsing": "reject",
+      "reason": "Explicit null keyIds is not absence.",
+      "utf8Bytes": 723
+    },
+    {
+      "file": "public-config/null-pin-entry.json",
+      "parsing": "reject",
+      "reason": "Each pin must be a PEM string.",
+      "utf8Bytes": 431
+    },
+    {
+      "file": "public-config/null-key-id-entry.json",
+      "parsing": "reject",
+      "reason": "Each key ID must match its pin.",
+      "utf8Bytes": 580
+    },
+    {
+      "file": "public-config/malformed-pem.json",
+      "parsing": "reject",
+      "reason": "Pins must be Ed25519 SPKI PEM with at most 256 UTF-8 bytes.",
+      "utf8Bytes": 320
+    },
+    {
+      "file": "public-config/set-malformed-pem.json",
+      "parsing": "reject",
+      "reason": "Every set member must be a bounded Ed25519 SPKI PEM.",
+      "utf8Bytes": 442
+    },
+    {
+      "file": "public-config/non-ed25519-pem.json",
+      "parsing": "reject",
+      "reason": "Pins must be Ed25519 SPKI PEM with at most 256 UTF-8 bytes.",
+      "utf8Bytes": 423
+    },
+    {
+      "file": "public-config/set-non-ed25519-pem.json",
+      "parsing": "reject",
+      "reason": "Every set member must be a bounded Ed25519 SPKI PEM.",
+      "utf8Bytes": 545
+    },
+    {
+      "file": "public-config/pin-over-256-bytes.json",
+      "parsing": "reject",
+      "reason": "Pins must be Ed25519 SPKI PEM with at most 256 UTF-8 bytes.",
+      "utf8Bytes": 711
+    },
+    {
+      "file": "public-config/set-pin-over-256-bytes.json",
+      "parsing": "reject",
+      "reason": "Every set member must be a bounded Ed25519 SPKI PEM.",
+      "utf8Bytes": 833
+    },
+    {
+      "file": "public-config/sixteen-keys.json",
+      "parsing": "accept",
+      "reason": "Sixteen distinct keys are accepted.",
+      "utf8Bytes": 2526,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/second.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/seventeen-keys.json",
+      "parsing": "reject",
+      "reason": "Seventeen distinct keys are rejected even below the JSON byte bound.",
+      "utf8Bytes": 2330
+    },
+    {
+      "file": "public-config/unknown-fields.json",
+      "parsing": "accept",
+      "reason": "Unknown fields are ignored, including unknown null values.",
+      "utf8Bytes": 813,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/second.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/exactly-4096-bytes.json",
+      "parsing": "accept",
+      "reason": "Unknown fields and multibyte UTF-8 count toward the inclusive 4096-byte JSON limit.",
+      "utf8Bytes": 4096,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/second.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/over-4096-bytes.json",
+      "parsing": "reject",
+      "reason": "One byte over 4096 is rejected even though the string has fewer than 4096 UTF-16 code units.",
+      "utf8Bytes": 4097
+    },
+    {
+      "file": "public-config/set-only-known-fields-4096.json",
+      "parsing": "accept",
+      "reason": "Sixteen bounded pins fill 4096 UTF-8 bytes; preserving usable parsed configuration must not add oversized redundant fields.",
+      "utf8Bytes": 4096,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/set-only-single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/set-only-second.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/set-with-ids-known-fields-4096.json",
+      "parsing": "accept",
+      "reason": "Sixteen bounded pins fill 4096 UTF-8 bytes; preserving usable parsed configuration must not add oversized redundant fields.",
+      "utf8Bytes": 4096,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/set-with-ids-single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/set-with-ids-second.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    },
+    {
+      "file": "public-config/both-nonfirst-single-known-fields-4096.json",
+      "parsing": "accept",
+      "reason": "Sixteen bounded pins fill 4096 UTF-8 bytes; preserving usable parsed configuration must not add oversized redundant fields.",
+      "utf8Bytes": 4096,
+      "envelopes": [
+        {
+          "file": "public-config/manifests/both-nonfirst-single-single.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/both-nonfirst-single-second.json",
+          "verification": "accept"
+        },
+        {
+          "file": "public-config/manifests/untrusted.json",
+          "verification": "reject"
+        }
+      ]
+    }
+  ],
   "resolution": [
     {
       "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
