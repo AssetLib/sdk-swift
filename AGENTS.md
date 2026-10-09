@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Assetlib for Swift: the public, MIT-licensed SwiftPM package (product `AssetLib`) that verifies signed artwork releases, keeps a verified local cache, and returns ordinary SwiftUI `Image` values with the app's bundled fallbacks. iOS 17+ / macOS 14+, Swift 6 language mode, no third-party runtime dependencies. Apps pin it by exact git tag; manifests are signed by the hosted console (https://console.assetlib.dev). Developer preview; latest release `0.3.0-preview.1` (October 9, 2026). The Kotlin SDK (AssetLib/sdk-android) and the JavaScript SDK (AssetLib/sdk-js) implement the same contract.
+Assetlib for Swift: the public, MIT-licensed SwiftPM package (product `AssetLib`) that verifies signed artwork releases, keeps a verified local cache, and returns ordinary SwiftUI `Image` values with the app's bundled fallbacks. iOS 17+ / macOS 14+, Swift 6 language mode, no third-party runtime dependencies. Apps pin it by exact git tag; manifests are signed by the hosted console (https://console.assetlib.dev). Developer preview; latest release `0.3.1-preview.1` (October 9, 2026). The Kotlin SDK (AssetLib/sdk-android) and the JavaScript SDK (AssetLib/sdk-js) implement the same contract.
 
 ## Commands
 
@@ -69,7 +69,7 @@ swift build -c release            # also compiles Examples/ through the AssetLib
 
 ## Verified vs not verified
 
-- Established for `0.3.0-preview.1`: `swift test` on macOS against the full corpus, the codegen tests, a release build, and green CI on `main` and on the tag.
+- Established for `0.3.0-preview.1` and `0.3.1-preview.1`: `swift test` on macOS against the full corpus, the codegen tests, a release build, and green CI on `main` and on the tag.
 - Not established: running on iPhone, iPad, or the simulator; VoiceOver; hosted acceptance of staging, variants, or PNG renditions; App Store submission. A macOS test pass is not an iOS pass.
 - Do not claim device, simulator, or hosted acceptance you did not run. When you do run a check, add a dated VERIFICATION.md entry with the exact command and output, and no local absolute paths or configuration contents.
 
