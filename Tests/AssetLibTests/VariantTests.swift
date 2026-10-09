@@ -53,6 +53,31 @@ private actor GatedDecision {
     func release() { pending?.resume(returning: "b"); pending = nil }
 }
 
+private actor ReentrantDecision {
+    var client: AssetClient?
+    func connect(_ client: AssetClient) { self.client = client }
+    func decide() async -> String? {
+        guard let client else { return nil }
+        guard await client.initialize().error == nil, await client.refresh().error == nil else { return nil }
+        let control = await client.resolve(variantCoast, arm: "control")
+        return control.armSource == .explicit ? "b" : nil
+    }
+}
+
+// A failed concurrency regression must finish too: do not join an unresponsive operation.
+private func decisionProbe<T: Sendable>(within duration: Duration = .milliseconds(800),
+                                       operation: @escaping @Sendable () async -> T) async -> T? {
+    let (stream, continuation) = AsyncStream<T>.makeStream(bufferingPolicy: .bufferingOldest(1))
+    let work = Task { continuation.yield(await operation()); continuation.finish() }
+    let timeout = Task {
+        try? await Task.sleep(for: duration)
+        continuation.finish()
+    }
+    defer { work.cancel(); timeout.cancel(); continuation.finish() }
+    var iterator = stream.makeAsyncIterator()
+    return await iterator.next()
+}
+
 private func variantObjects(_ configuration: AssetConfiguration) throws -> [String: Data] {
     let base = "/api/delivery/\(configuration.orgId)/\(configuration.appId)/assets/"
     return [base + coastID: try variantFixture("assets/coast.webp"), base + ridgeID: try variantFixture("assets/ridge.webp")]
@@ -213,6 +238,7 @@ private struct SignedVariants {
             #expect(result.assetID == (answer == "b" ? coastID : ridgeID))
             #expect(result.arm == (answer == "b" ? "b" : nil))
             #expect(result.armSource == (answer == "b" ? .decision : .invalidDecision))
+            if answer != "b" { #expect(result.message.contains("Decision callback")) }
             #expect(await decisions.calls == [.init(key: variantCoast.key, arms: ["b"])])
             await decisions.reset()
             for arm in ["b", "control", "zzz"] {
@@ -222,6 +248,196 @@ private struct SignedVariants {
             _ = await client.resolve(.init(key: variantCoast.key, width: 1, height: 1))
             _ = await client.resolve(.init(key: "missing.artwork", width: 1200, height: 900))
             #expect(await decisions.calls.isEmpty)
+        }
+    }
+
+    @Test func stalledDecisionDoesNotBlockClientOperations() async throws {
+        let f = try SignedVariants(), root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let gate = GatedDecision()
+        let transport = VariantTransport(manifest: try f.manifest(), objects: try variantObjects(f.configuration))
+        let client = try AssetClient(configuration: f.configuration, storage: FileAssetStorage(configuration: f.configuration, root: root),
+            transport: transport, decide: { _, _ in await gate.decide() })
+        #expect(await client.refresh().sequence == 6)
+        let pending = Task { await client.resolve(variantCoast) }
+        await gate.waitUntilCalled()
+        let completed = await decisionProbe {
+            async let refreshed = client.refresh()
+            async let initialized = client.initialize()
+            async let control = client.resolve(variantCoast, arm: "control")
+            async let explicit = client.resolve(variantCoast, arm: "b")
+            let values = await (refreshed, initialized, control, explicit)
+            return values.0.error == nil && values.1.error == nil && values.2.armSource == .explicit && values.3.armSource == .explicit
+        }
+        #expect(completed == true, "Client operations must finish while the decision remains suspended")
+        await gate.release()
+        _ = await pending.value
+    }
+
+    @Test func stalledDecisionTimesOutToControlByDefault() async throws {
+        let f = try SignedVariants(), root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let gate = GatedDecision()
+        let transport = VariantTransport(manifest: try f.manifest(), objects: try variantObjects(f.configuration))
+        let client = try AssetClient(configuration: f.configuration, storage: FileAssetStorage(configuration: f.configuration, root: root),
+            transport: transport, decide: { _, _ in await gate.decide() })
+        _ = await client.refresh()
+        let pending = Task { await client.resolve(variantCoast, appearance: .dark) }
+        await gate.waitUntilCalled()
+        let result = await decisionProbe(within: .milliseconds(2500)) { await pending.value }
+        #expect(result?.armSource == .invalidDecision)
+        #expect(result?.assetID == ridgeID && result?.arm == nil)
+        #expect(result?.message.contains("timed out") == true)
+        await gate.release()
+        _ = await pending.value
+    }
+
+    @Test func decisionResolvesAgainstReleaseAcceptedDuringCallback() async throws {
+        let f = try SignedVariants()
+        for anotherClient in [false, true] {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let gate = GatedDecision()
+            let transport = VariantTransport(manifest: try f.manifest(), objects: try variantObjects(f.configuration))
+            let client = try AssetClient(configuration: f.configuration, storage: FileAssetStorage(configuration: f.configuration, root: root),
+                transport: transport, decide: { _, _ in await gate.decide() })
+            _ = await client.refresh()
+            let pending = Task { await client.resolve(variantCoast, appearance: .dark) }
+            await gate.waitUntilCalled()
+            var cell = f.cells[1]; cell["arm"] = "b"
+            cell["accessibility"] = ["defaultLocale": "en", "descriptions": ["en": "New release"]]
+            var slot = f.slot; slot["cells"] = [cell]
+            await transport.update(manifest: try f.manifest(f.payload(sequence: 7, slot: slot)), objects: try variantObjects(f.configuration))
+            let writer = try anotherClient ? AssetClient(configuration: f.configuration,
+                storage: FileAssetStorage(configuration: f.configuration, root: root), transport: transport) : client
+            let refreshed = await decisionProbe { await writer.refresh() }
+            #expect(refreshed?.sequence == 7)
+            await gate.release()
+            let result = await pending.value
+            #expect(result.sequence == 7 && result.assetID == ridgeID && result.arm == "b")
+            #expect(result.accessibility?.localizedDescription(languageTag: "en") == "New release")
+        }
+    }
+
+    @Test func decisionRevalidatesDurableStateAfterCallback() async throws {
+        let f = try SignedVariants()
+        for detectWhileSuspended in [false, true] {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let gate = GatedDecision()
+            let transport = VariantTransport(manifest: try f.manifest(), objects: try variantObjects(f.configuration))
+            let client = try AssetClient(configuration: f.configuration, storage: FileAssetStorage(configuration: f.configuration, root: root),
+                transport: transport, decide: { _, _ in await gate.decide() })
+            _ = await client.refresh()
+            #expect(await client.resolve(variantCoast, arm: "b").source == .remote)
+            await transport.resetRequests()
+            let pending = Task { await client.resolve(variantCoast) }
+            await gate.waitUntilCalled()
+            let state = root.appendingPathComponent(f.configuration.storageNamespace).appendingPathComponent("state.json")
+            try Data("{}".utf8).write(to: state, options: .atomic)
+            if detectWhileSuspended {
+                let detected = await decisionProbe { await client.initialize() }
+                #expect(detected?.error != nil)
+            }
+            await gate.release()
+            #expect(await pending.value.source == .bundle)
+            #expect(await transport.requests.isEmpty)
+        }
+    }
+
+    @Test func decisionArmIsRecheckedAgainstCurrentDeclarations() async throws {
+        let f = try SignedVariants(), root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let gate = GatedDecision()
+        let transport = VariantTransport(manifest: try f.manifest(), objects: try variantObjects(f.configuration))
+        let client = try AssetClient(configuration: f.configuration, storage: FileAssetStorage(configuration: f.configuration, root: root),
+            transport: transport, decide: { _, _ in await gate.decide() })
+        _ = await client.refresh()
+        let pending = Task { await client.resolve(variantCoast) }
+        await gate.waitUntilCalled()
+        var slot = f.slot; slot["variants"] = ["arm": ["c"]]; slot["cells"] = []
+        await transport.update(manifest: try f.manifest(f.payload(sequence: 7, slot: slot)), objects: try variantObjects(f.configuration))
+        let writer = try AssetClient(configuration: f.configuration,
+            storage: FileAssetStorage(configuration: f.configuration, root: root), transport: transport)
+        #expect(await writer.refresh().sequence == 7)
+        await gate.release()
+        let result = await pending.value
+        #expect(result.sequence == 7 && result.arm == nil && result.armSource == .invalidDecision)
+        #expect(result.message.contains("undeclared"))
+    }
+
+    @Test func decisionTimeoutIsConfigurableAndBounded() async throws {
+        let f = try SignedVariants(), root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let storage = try FileAssetStorage(configuration: f.configuration, root: root)
+        for invalid in [Int.min, 0, 99, 10_001, Int.max] {
+            #expect(throws: AssetLibError.self) {
+                _ = try AssetClient(configuration: f.configuration, storage: storage, decisionTimeoutMilliseconds: invalid)
+            }
+        }
+        _ = try AssetClient(configuration: f.configuration, storage: storage, decisionTimeoutMilliseconds: 10_000)
+        let gate = GatedDecision()
+        let transport = VariantTransport(manifest: try f.manifest(), objects: try variantObjects(f.configuration))
+        let client = try AssetClient(configuration: f.configuration, storage: storage, transport: transport,
+            decisionTimeoutMilliseconds: 100, decide: { _, _ in await gate.decide() })
+        _ = await client.refresh()
+        let start = ContinuousClock.now
+        let pending = Task { await client.resolve(variantCoast) }
+        await gate.waitUntilCalled()
+        let result = await decisionProbe { await pending.value }
+        #expect(result?.armSource == .invalidDecision && result?.arm == nil)
+        #expect(result?.message.contains("100 milliseconds") == true)
+        #expect(start.duration(to: .now) >= .milliseconds(100))
+        await gate.release()
+        _ = await pending.value
+        #expect(await client.resolve(variantCoast, arm: "control").source == .cache)
+    }
+
+    @Test func decisionCanReenterClient() async throws {
+        let f = try SignedVariants(), root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let reentrant = ReentrantDecision()
+        let transport = VariantTransport(manifest: try f.manifest(), objects: try variantObjects(f.configuration))
+        let client = try AssetClient(configuration: f.configuration, storage: FileAssetStorage(configuration: f.configuration, root: root),
+            transport: transport, decide: { _, _ in await reentrant.decide() })
+        await reentrant.connect(client)
+        _ = await client.refresh()
+        let result = await decisionProbe { await client.resolve(variantCoast) }
+        #expect(result?.armSource == .decision && result?.arm == "b")
+    }
+
+    @Test func cancelledDecisionWaitReturnsWithoutJoiningCallback() async throws {
+        let f = try SignedVariants(), root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let gate = GatedDecision()
+        let transport = VariantTransport(manifest: try f.manifest(), objects: try variantObjects(f.configuration))
+        let client = try AssetClient(configuration: f.configuration, storage: FileAssetStorage(configuration: f.configuration, root: root),
+            transport: transport, decide: { _, _ in await gate.decide() })
+        _ = await client.refresh()
+        await transport.resetRequests()
+        let pending = Task { await client.resolve(variantCoast) }
+        await gate.waitUntilCalled()
+        pending.cancel()
+        let result = await decisionProbe { await pending.value }
+        #expect(result?.source == .bundle && result?.message.contains("cancelled") == true)
+        #expect(await transport.requests.isEmpty)
+        #expect(await client.initialize().error == nil)
+        #expect(await client.resolve(variantCoast, arm: "control").armSource == .explicit)
+        await gate.release()
+        _ = await pending.value
+    }
+
+    @Test func throwingDecisionUsesControlWithReason() async throws {
+        let f = try SignedVariants(), root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let transport = VariantTransport(manifest: try f.manifest(), objects: try variantObjects(f.configuration))
+        let client = try AssetClient(configuration: f.configuration, storage: FileAssetStorage(configuration: f.configuration, root: root),
+            transport: transport, decide: { _, _ in throw AssetLibError.invalid("App decision failed") })
+        _ = await client.refresh()
+        for _ in 0..<2 {
+            let result = await client.resolve(variantCoast, appearance: .dark)
+            #expect(result.armSource == .invalidDecision && result.arm == nil && result.assetID == ridgeID)
+            #expect(result.message.contains("threw"))
         }
     }
 

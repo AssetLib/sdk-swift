@@ -19,12 +19,13 @@ enum ManifestVerifier {
     }
 
     static func verify(_ envelope: SignedManifest, config: AssetConfiguration) throws -> ManifestPayload {
-        guard envelope.algorithm == "Ed25519", envelope.publicKey == config.pinnedPublicKey, envelope.keyId == config.signingKeyID,
+        guard envelope.algorithm == "Ed25519", config.trustedPublicKeys.contains(envelope.publicKey),
+              envelope.keyId == String(hashBytes(Data(envelope.publicKey.utf8)).prefix(16)),
               envelope.payload.utf8.count <= AssetLimits.manifestBytes, matches(envelope.signature, "^[A-Za-z0-9+/]{86}==$"),
               let signature = Data(base64Encoded: envelope.signature), signature.count == 64 else {
             throw AssetLibError.invalid("Invalid signed manifest envelope.")
         }
-        let key = try Curve25519.Signing.PublicKey(rawRepresentation: rawPublicKey(config.pinnedPublicKey))
+        let key = try Curve25519.Signing.PublicKey(rawRepresentation: rawPublicKey(envelope.publicKey))
         guard key.isValidSignature(signature, for: Data(envelope.payload.utf8)) else { throw AssetLibError.invalid("Manifest signature verification failed.") }
         let payload: ManifestPayload
         do {

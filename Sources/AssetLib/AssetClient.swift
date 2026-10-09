@@ -6,7 +6,8 @@ public actor AssetClient {
     private let storage: any AssetStorage
     private let transport: any AssetTransport
     private let supportedFormats: [AssetFormat]
-    private let decide: (@Sendable (String, [String]) async -> String?)?
+    private let decide: (@Sendable (String, [String]) async throws -> String?)?
+    private let decisionTimeoutMilliseconds: Int
     private var state = PersistedState()
     private var initialized = false
     private var storageFailure: String?
@@ -16,12 +17,18 @@ public actor AssetClient {
     public var sequence: Int { state.highestSequence }
 
     /// The decision callback assigns an arm; the app logs exposure only after rendering artwork.
-    /// It must not await initialize, refresh, or resolve on this same client while resolving.
-    public init(configuration: AssetConfiguration, storage: any AssetStorage, transport: (any AssetTransport)? = nil, supportedFormats: [AssetFormat] = [.webP, .png], decide: (@Sendable (String, [String]) async -> String?)? = nil) throws {
+    /// It runs outside the operation gate and may call back into this client. A timeout, thrown
+    /// error, nil, or undeclared arm selects control and includes a reason in the result message.
+    /// The wait defaults to 1,500 milliseconds and must be between 100 and 10,000.
+    public init(configuration: AssetConfiguration, storage: any AssetStorage, transport: (any AssetTransport)? = nil, supportedFormats: [AssetFormat] = [.webP, .png], decisionTimeoutMilliseconds: Int = 1_500, decide: (@Sendable (String, [String]) async throws -> String?)? = nil) throws {
         try configuration.validate()
         guard supportedFormats.contains(.webP), Set(supportedFormats).count == supportedFormats.count else {
             throw AssetLibError.invalid("Supported formats must be unique and include WebP for legacy fallback.")
         }
+        guard (100...10_000).contains(decisionTimeoutMilliseconds) else {
+            throw AssetLibError.invalid("Decision timeout must be between 100 and 10000 milliseconds.")
+        }
+        self.decisionTimeoutMilliseconds = decisionTimeoutMilliseconds
         self.configuration = configuration
         self.storage = storage
         self.transport = try transport ?? HTTPSAssetTransport()
@@ -29,7 +36,7 @@ public actor AssetClient {
         self.decide = decide
     }
 
-    // Actors may reenter across await. Serialize the full operation, including disk and network suspension points.
+    // Actors may reenter across await. Serialize storage/network work, but never app decision callbacks.
     private func acquire() async {
         if !busy { busy = true; return }
         await withCheckedContinuation { waiters.append($0) }
@@ -102,12 +109,29 @@ public actor AssetClient {
         let target = targetPixels ?? AssetPixelSize(width: reference.width, height: reference.height)
         guard target.isValid else { return fallback("Target pixel dimensions must each be between 1 and 8192.") }
         guard !Task.isCancelled else { return fallback("Artwork request cancelled.") }
-        // Decide once from the current release, then keep that assignment through historical fallback.
-        let current = state.history.first.flatMap { try? ManifestVerifier.verify($0, config: configuration) }
-        let currentSlot = current?.slots.first { $0.key == reference.key && $0.width == reference.width && $0.height == reference.height }
-        let decision = await decideArm(reference.key, slot: currentSlot, explicitArm: arm)
-        guard !Task.isCancelled else { return fallback("Artwork request cancelled.", armSource: decision.source) }
-        var message = storageFailure ?? "No compatible published artwork is available."
+        var decision = ArmDecision(arm: arm == "control" ? nil : arm, source: arm == nil ? .control : .explicit)
+        if arm == nil, let arms = currentSlot(for: reference)?.variants?.arm, !arms.isEmpty, let decide {
+            // Only the callback inputs cross this boundary. No release snapshot is used afterward.
+            release()
+            let outcome = await Self.evaluateDecision(decide, key: reference.key, arms: arms,
+                                                      timeoutMilliseconds: decisionTimeoutMilliseconds)
+            await acquire()
+            await load()
+            switch outcome {
+            case .answer(let answer):
+                if let answer, currentSlot(for: reference)?.variants?.arm?.contains(answer) == true {
+                    decision = ArmDecision(arm: answer, source: .decision)
+                } else {
+                    decision = ArmDecision(arm: nil, source: .invalidDecision,
+                        reason: answer == nil ? "Decision callback returned no arm. Using control." : "Decision callback returned an undeclared arm for the current release. Using control.")
+                }
+            case .invalid(let reason):
+                decision = ArmDecision(arm: nil, source: .invalidDecision, reason: reason)
+            }
+        }
+        guard !Task.isCancelled else { return fallback(decision.explain("Artwork request cancelled."), armSource: decision.source) }
+        if let storageFailure { return fallback(decision.explain(storageFailure), armSource: decision.source) }
+        var message = "No compatible published artwork is available."
         for (index, envelope) in state.history.enumerated() {
             do {
                 try Task.checkCancellation()
@@ -120,7 +144,7 @@ public actor AssetClient {
                     do {
                         try Task.checkCancellation()
                         if let data = try await storage.asset(for: candidate.sha256), let size = ManifestVerifier.decodedSize(data, candidate: candidate) {
-                            return .init(source: .cache, sequence: payload.sequence, message: index == 0 ? "Verified artwork from this device." : "Using verified artwork from release \(payload.sequence). \(message)", bytes: data, sha256: candidate.sha256, assetID: selected.assetId, mime: candidate.mime, pixelSize: size, accessibility: selected.accessibility, appearance: cell?.appearance, arm: cell?.arm, armSource: decision.source)
+                            return .init(source: .cache, sequence: payload.sequence, message: decision.explain(index == 0 ? "Verified artwork from this device." : "Using verified artwork from release \(payload.sequence). \(message)"), bytes: data, sha256: candidate.sha256, assetID: selected.assetId, mime: candidate.mime, pixelSize: size, accessibility: selected.accessibility, appearance: cell?.appearance, arm: cell?.arm, armSource: decision.source)
                         }
                         guard index == 0, download else { continue }
                         let data = try await transport.get(ManifestVerifier.candidateURL(candidate, assetID: selected.assetId, config: configuration), maximumBytes: candidate.bytes, accept: candidate.mime)
@@ -129,19 +153,59 @@ public actor AssetClient {
                             throw AssetLibError.invalid("Artwork does not match the signed bytes, type, or dimensions.")
                         }
                         try await storage.saveAsset(data, hash: candidate.sha256)
-                        return .init(source: .remote, sequence: payload.sequence, message: "Downloaded and verified artwork.", bytes: data, sha256: candidate.sha256, assetID: selected.assetId, mime: candidate.mime, pixelSize: size, accessibility: selected.accessibility, appearance: cell?.appearance, arm: cell?.arm, armSource: decision.source)
+                        return .init(source: .remote, sequence: payload.sequence, message: decision.explain("Downloaded and verified artwork."), bytes: data, sha256: candidate.sha256, assetID: selected.assetId, mime: candidate.mime, pixelSize: size, accessibility: selected.accessibility, appearance: cell?.appearance, arm: cell?.arm, armSource: decision.source)
                     } catch { message = error.localizedDescription }
                 }
             } catch { message = error.localizedDescription }
         }
-        return fallback(message, armSource: decision.source)
+        return fallback(decision.explain(message), armSource: decision.source)
     }
 
-    private func decideArm(_ key: String, slot: ManifestSlot?, explicitArm: String?) async -> (arm: String?, source: AssetArmSource) {
-        if let explicitArm { return (explicitArm == "control" ? nil : explicitArm, .explicit) }
-        guard let arms = slot?.variants?.arm, !arms.isEmpty, let decide else { return (nil, .control) }
-        guard let arm = await decide(key, arms), arms.contains(arm) else { return (nil, .invalidDecision) }
-        return (arm, .decision)
+    private func currentSlot(for reference: AssetReference) -> ManifestSlot? {
+        state.history.first.flatMap { try? ManifestVerifier.verify($0, config: configuration) }?.slots.first {
+            $0.key == reference.key && $0.width == reference.width && $0.height == reference.height
+        }
+    }
+
+    private struct ArmDecision {
+        let arm: String?
+        let source: AssetArmSource
+        var reason: String? = nil
+        func explain(_ message: String) -> String { reason.map { "\(message) \($0)" } ?? message }
+    }
+
+    private enum DecisionOutcome: Sendable {
+        case answer(String?)
+        case invalid(String)
+    }
+
+    private nonisolated static func evaluateDecision(
+        _ decide: @escaping @Sendable (String, [String]) async throws -> String?,
+        key: String, arms: [String], timeoutMilliseconds: Int
+    ) async -> DecisionOutcome {
+        // Unstructured tasks are intentional: a task group would join a callback that ignores
+        // cancellation. Detached execution also keeps the callback's synchronous work off this
+        // client's actor. The oldest buffer and single read select the first result; late completions
+        // cannot change that selection.
+        let (stream, continuation) = AsyncStream<DecisionOutcome>.makeStream(bufferingPolicy: .bufferingOldest(1))
+        let callback = Task.detached {
+            do { continuation.yield(.answer(try await decide(key, arms))) }
+            catch { continuation.yield(.invalid("Decision callback threw an error. Using control.")) }
+            continuation.finish()
+        }
+        let timeout = Task.detached {
+            do { try await Task.sleep(for: .milliseconds(timeoutMilliseconds)) }
+            catch { return }
+            continuation.yield(.invalid("Decision callback timed out after \(timeoutMilliseconds) milliseconds. Using control."))
+            continuation.finish()
+        }
+        defer { callback.cancel(); timeout.cancel(); continuation.finish() }
+        return await withTaskCancellationHandler {
+            var iterator = stream.makeAsyncIterator()
+            return await iterator.next() ?? .invalid("Decision callback wait was cancelled. Using control.")
+        } onCancel: {
+            continuation.finish()
+        }
     }
 
     private func selectedCell(in slot: ManifestSlot, arm: String?, appearance: AssetAppearance?) -> ManifestCell? {

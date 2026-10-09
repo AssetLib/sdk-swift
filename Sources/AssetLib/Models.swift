@@ -48,6 +48,8 @@ public struct AssetConfiguration: Codable, Sendable, Equatable {
     public let environment: String
     public let manifestUrl: String
     public let pinnedPublicKey: String
+    /// Optional overlapping trust set for key rotation. It must include `pinnedPublicKey`.
+    public let pinnedPublicKeys: [String]?
     public let keyId: String?
 
     /// Accept the public JSON exported by the console. Never pass editor tokens or private keys.
@@ -61,7 +63,12 @@ public struct AssetConfiguration: Codable, Sendable, Equatable {
     public func validate() throws {
         guard schemaVersion == 1, ["staging", "production"].contains(environment), matches(orgId, uuidPattern), matches(appId, uuidPattern),
               pinnedPublicKey.utf8.count <= 256 else { throw AssetLibError.invalid("Invalid Assetlib public configuration.") }
-        _ = try ManifestVerifier.rawPublicKey(pinnedPublicKey)
+        guard (1...16).contains(trustedPublicKeys.count), Set(trustedPublicKeys).count == trustedPublicKeys.count,
+              trustedPublicKeys.contains(pinnedPublicKey) else { throw AssetLibError.invalid("Invalid pinned public key set.") }
+        for key in trustedPublicKeys {
+            guard key.utf8.count <= 256 else { throw AssetLibError.invalid("Invalid pinned public key.") }
+            _ = try ManifestVerifier.rawPublicKey(key)
+        }
         guard keyId == nil || keyId == signingKeyID else { throw AssetLibError.invalid("Signing key ID does not match the pinned key.") }
         let deliveryPath = "/api/delivery/\(orgId)/\(appId)"
         let environmentPath = "\(deliveryPath)/environments/\(environment)/manifest"
@@ -74,7 +81,29 @@ public struct AssetConfiguration: Codable, Sendable, Equatable {
     }
 
     public var signingKeyID: String { String(hashBytes(Data(pinnedPublicKey.utf8)).prefix(16)) }
-    public var storageNamespace: String { hashBytes(Data("\(manifestUrl)\n\(orgId)\n\(appId)\n\(pinnedPublicKey)".utf8)) }
+    var trustedPublicKeys: [String] { pinnedPublicKeys ?? [pinnedPublicKey] }
+
+    /// Durable identity survives delivery-path and signing-key changes for the same environment.
+    public var storageNamespace: String {
+        let parts = URLComponents(string: manifestUrl)
+        let port = parts?.port.flatMap { $0 == 443 ? nil : ":\($0)" } ?? ""
+        let origin = "https://\(parts?.host?.lowercased() ?? "")\(port)"
+        return hashBytes(Data("\(origin)\n\(orgId)\n\(appId)\n\(environment)".utf8))
+    }
+
+    /// The previous release used the complete URL and one pinned key. Production had two URL forms.
+    var legacyStorageNamespaces: [String] {
+        var urls = [manifestUrl]
+        if environment == "production", var parts = URLComponents(string: manifestUrl) {
+            for path in ["/api/delivery/\(orgId)/\(appId)/manifest", "/api/delivery/\(orgId)/\(appId)/environments/production/manifest"] {
+                parts.percentEncodedPath = path
+                if let url = parts.string { urls.append(url) }
+            }
+        }
+        return Set(urls.flatMap { url in
+            trustedPublicKeys.map { key in hashBytes(Data("\(url)\n\(orgId)\n\(appId)\n\(key)".utf8)) }
+        }).sorted()
+    }
 }
 
 struct SignedManifest: Codable, Sendable {
