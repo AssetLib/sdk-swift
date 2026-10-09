@@ -1,8 +1,53 @@
 {
   "schemaVersion": 1,
   "placements": [
-    {"key":"travel.coast","symbol":["Travel","coast"],"width":1200,"height":900,"fallbackImageName":"coast"},
-    {"key":"travel.ridge","symbol":["Travel","ridge"],"width":1200,"height":900,"fallbackImageName":"ridge"},
-    {"key":"tasks.garden","symbol":["Tasks","garden"],"width":600,"height":400,"fallbackImageName":"garden"}
+    {
+      "key": "travel.coast",
+      "symbol": [
+        "Travel",
+        "coast"
+      ],
+      "width": 1200,
+      "height": 900,
+      "fallbackImageName": "coast",
+      "bundledAccessibility": {
+        "defaultLocale": "en",
+        "descriptions": {
+          "en": "A coastal landscape with blue water and cliffs"
+        }
+      }
+    },
+    {
+      "key": "travel.ridge",
+      "symbol": [
+        "Travel",
+        "ridge"
+      ],
+      "width": 1200,
+      "height": 900,
+      "fallbackImageName": "ridge",
+      "bundledAccessibility": {
+        "defaultLocale": "en",
+        "descriptions": {
+          "en": "A mountain landscape with layered ridges"
+        }
+      }
+    },
+    {
+      "key": "tasks.garden",
+      "symbol": [
+        "Tasks",
+        "garden"
+      ],
+      "width": 600,
+      "height": 400,
+      "fallbackImageName": "garden",
+      "bundledAccessibility": {
+        "defaultLocale": "en",
+        "descriptions": {
+          "en": "A small garden of green plants"
+        }
+      }
+    }
   ]
 }

@@ -8,327 +8,833 @@
     {
       "file": "manifests/valid-seq1.json",
       "verification": "accept",
-      "reason": "First release: coast artwork, exact UTF-8 payload includes non-ASCII text."
+      "reason": "First release: coast artwork, exact UTF-8 payload includes non-ASCII text.",
+      "config": "production"
     },
     {
       "file": "manifests/valid-seq2.json",
       "verification": "accept",
-      "reason": "Second release: ridge artwork replaces coast in the same typed placement."
+      "reason": "Second release: ridge artwork replaces coast in the same typed placement.",
+      "config": "production"
     },
     {
       "file": "manifests/valid-rollback-seq3.json",
       "verification": "accept",
-      "reason": "Authorized rollback is new sequence 3 reusing the coast asset bytes."
+      "reason": "Authorized rollback is new sequence 3 reusing the coast asset bytes.",
+      "config": "production"
     },
     {
       "file": "manifests/valid-pretty-seq1.json",
       "verification": "accept",
-      "reason": "Valid signature over a differently formatted payload; accept for fresh state without reserialization."
+      "reason": "Valid signature over a differently formatted payload; accept for fresh state without reserialization.",
+      "config": "production"
     },
     {
       "file": "manifests/valid-absolute-url.json",
       "verification": "accept",
-      "reason": "Absolute same-origin exact asset path is valid."
+      "reason": "Absolute same-origin exact asset path is valid.",
+      "config": "production"
     },
     {
       "file": "manifests/valid-logical-dimensions.json",
       "verification": "accept",
-      "reason": "Logical placement dimensions need not equal decoded WebP pixels; matching generated reference must be 600×450."
+      "reason": "Logical placement dimensions need not equal decoded WebP pixels; matching generated reference must be 600×450.",
+      "config": "production"
     },
     {
       "file": "manifests/valid-screen-utf16-boundary.json",
       "verification": "accept",
-      "reason": "60 astral characters occupy exactly 120 UTF-16 code units."
+      "reason": "60 astral characters occupy exactly 120 UTF-16 code units.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/bad-signature.json",
       "verification": "reject",
-      "reason": "Signature bytes changed; payload unchanged."
+      "reason": "Signature bytes changed; payload unchanged.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/payload-tamper.json",
       "verification": "reject",
-      "reason": "Payload UTF-8 changed without re-signing."
+      "reason": "Payload UTF-8 changed without re-signing.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/pinned-pem-text.json",
       "verification": "reject",
-      "reason": "Same underlying key but different PEM text is not the configured pin."
+      "reason": "Same underlying key but different PEM text is not the configured pin.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/key-id.json",
       "verification": "reject",
-      "reason": "Envelope key ID differs from SHA-256 of exact configured PEM."
+      "reason": "Envelope key ID differs from SHA-256 of exact configured PEM.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/algorithm.json",
       "verification": "reject",
-      "reason": "Algorithm name is case-sensitive."
+      "reason": "Algorithm name is case-sensitive.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/base64-signature.json",
       "verification": "reject",
-      "reason": "Signature must be canonical 88-character base64 with == suffix."
+      "reason": "Signature must be canonical 88-character base64 with == suffix.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/cross-app.json",
       "verification": "reject",
-      "reason": "Signed payload is scoped to another app. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Signed payload is scoped to another app. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/cross-org.json",
       "verification": "reject",
-      "reason": "Signed payload is scoped to another organization. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Signed payload is scoped to another organization. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/environment.json",
       "verification": "reject",
-      "reason": "Wrong environment. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Wrong environment. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/schema-version.json",
       "verification": "reject",
-      "reason": "Unsupported payload schema. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Unsupported payload schema. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/external-url.json",
       "verification": "reject",
-      "reason": "Cross-origin image URL. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Cross-origin image URL. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/cross-app-url.json",
       "verification": "reject",
-      "reason": "Image path is outside configured app. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Image path is outside configured app. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/asset-id-url.json",
       "verification": "reject",
-      "reason": "URL asset ID does not match signed slot asset ID. Signature is valid, so rejection must occur after signature verification."
+      "reason": "URL asset ID does not match signed slot asset ID. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/query-url.json",
       "verification": "reject",
-      "reason": "Asset URL query is prohibited. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Asset URL query is prohibited. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/fragment-url.json",
       "verification": "reject",
-      "reason": "Asset URL fragment is prohibited. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Asset URL fragment is prohibited. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/userinfo-url.json",
       "verification": "reject",
-      "reason": "Asset URL userinfo is prohibited. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Asset URL userinfo is prohibited. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/mime.json",
       "verification": "reject",
-      "reason": "Preview contract supports image/webp only. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Preview contract supports image/webp only. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/uppercase-hash.json",
       "verification": "reject",
-      "reason": "SHA-256 must be 64 lowercase hexadecimal characters. Signature is valid, so rejection must occur after signature verification."
+      "reason": "SHA-256 must be 64 lowercase hexadecimal characters. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/invalid-key.json",
       "verification": "reject",
-      "reason": "Placement key does not match the allowed key grammar. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Placement key does not match the allowed key grammar. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/duplicate-key.json",
       "verification": "reject",
-      "reason": "Duplicate placement keys are forbidden. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Duplicate placement keys are forbidden. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/empty-slots.json",
       "verification": "reject",
-      "reason": "At least one slot is required. Signature is valid, so rejection must occur after signature verification."
+      "reason": "At least one slot is required. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/too-many-slots.json",
       "verification": "reject",
-      "reason": "Maximum 100 placements. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Maximum 100 placements. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/dimension-zero.json",
       "verification": "reject",
-      "reason": "Logical dimensions start at 1. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Logical dimensions start at 1. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/dimension-limit.json",
       "verification": "reject",
-      "reason": "Logical dimensions cannot exceed 8192. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Logical dimensions cannot exceed 8192. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/screen-utf16-limit.json",
       "verification": "reject",
-      "reason": "61 astral characters occupy 122 UTF-16 code units and exceed the screen bound. Signature is valid, so rejection must occur after signature verification."
+      "reason": "61 astral characters occupy 122 UTF-16 code units and exceed the screen bound. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/bytes-zero.json",
       "verification": "reject",
-      "reason": "Image byte count must be positive. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Image byte count must be positive. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/bytes-limit.json",
       "verification": "reject",
-      "reason": "Image byte count exceeds 8 MiB. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Image byte count exceeds 8 MiB. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/sequence-zero.json",
       "verification": "reject",
-      "reason": "Sequences start at 1. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Sequences start at 1. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/sequence-fractional.json",
       "verification": "reject",
-      "reason": "Sequence must be integer. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Sequence must be integer. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/sequence-boolean.json",
       "verification": "reject",
-      "reason": "Boolean is not an integer even if a platform boxes it as a number. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Boolean is not an integer even if a platform boxes it as a number. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/sequence-limit.json",
       "verification": "reject",
-      "reason": "Sequence exceeds signed 32-bit positive range. Signature is valid, so rejection must occur after signature verification."
+      "reason": "Sequence exceeds signed 32-bit positive range. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/invalid-time.json",
       "verification": "reject",
-      "reason": "createdAt must parse as a date. Signature is valid, so rejection must occur after signature verification."
+      "reason": "createdAt must parse as a date. Signature is valid, so rejection must occur after signature verification.",
+      "config": "production"
     },
     {
       "file": "manifests/stateful/stale-seq1.json",
       "verification": "accept",
-      "reason": "Stateless-valid; refresh must reject after persisted sequence 2."
+      "reason": "Stateless-valid; refresh must reject after persisted sequence 2.",
+      "config": "production"
     },
     {
       "file": "manifests/stateful/equivocation-seq2.json",
       "verification": "accept",
-      "reason": "Stateless-valid; exact signed payload differs from accepted sequence 2 and must be rejected statefully."
+      "reason": "Stateless-valid; exact signed payload differs from accepted sequence 2 and must be rejected statefully.",
+      "config": "production"
     },
     {
       "file": "manifests/stateful/reformatted-seq2.json",
       "verification": "accept",
-      "reason": "Stateless-valid and semantically equal; exact UTF-8 payload differs, so reject after sequence 2."
+      "reason": "Stateless-valid and semantically equal; exact UTF-8 payload differs, so reject after sequence 2.",
+      "config": "production"
     },
     {
       "file": "manifests/stateful/unicode-equivalent-seq2.json",
       "verification": "accept",
-      "reason": "Stateless-valid; canonically equivalent Unicode is still different signed UTF-8 and must be rejected after sequence 2. Swift String equality is not byte equality."
+      "reason": "Stateless-valid; canonically equivalent Unicode is still different signed UTF-8 and must be rejected after sequence 2. Swift String equality is not byte equality.",
+      "config": "production"
     },
     {
       "file": "manifests/valid-renditions-seq4.json",
       "verification": "accept",
-      "reason": "Rendition extension with PNG sizes, sanitized SVG and full-size WebP; legacy fields unchanged."
+      "reason": "Rendition extension with PNG sizes, sanitized SVG and full-size WebP; legacy fields unchanged.",
+      "config": "production"
     },
     {
       "file": "manifests/valid-rendition-extension-legacy-slot.json",
       "verification": "accept",
-      "reason": "Versioned extension may contain a slot from before original/rendition retention."
+      "reason": "Versioned extension may contain a slot from before original/rendition retention.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-version.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-null-version.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-boolean-version.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-missing-version.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-null-array.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-empty-array.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-too-many.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-duplicate-hash.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-external-url.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-wrong-url-hash.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-query.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-fragment.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-mime.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-zero-width.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-fractional-width.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-boolean-width.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-huge-dimensions.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-aspect.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-bytes.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
     },
     {
       "file": "manifests/invalid/rendition-svg-bytes.json",
       "verification": "reject",
-      "reason": "Re-signed invalid rendition extension."
+      "reason": "Re-signed invalid rendition extension.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-animation-poster-seq5.json",
+      "verification": "accept",
+      "reason": "Image-only clients ignore the additive animation descriptor and retain the mandatory WebP poster.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-accessibility-seq6.json",
+      "verification": "accept",
+      "reason": "Localized descriptions are signed with the selected artwork.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-accessibility-utf16-boundary.json",
+      "verification": "accept",
+      "reason": "Case-insensitive default locale and exactly 1000 UTF-16 units.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-null.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: null.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-array.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: array.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-missing-default.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: missing-default.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-missing-descriptions.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: missing-descriptions.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-empty.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: empty.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-unknown-default.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: unknown-default.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-duplicate-locale.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: duplicate-locale.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-invalid-locale.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: invalid-locale.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-newline-locale.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: newline-locale.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-long-locale.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: long-locale.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-blank.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: blank.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-unicode-blank.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: unicode-blank.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-non-string.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: non-string.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-utf16-limit.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: utf16-limit.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/accessibility-too-many-locales.json",
+      "verification": "reject",
+      "reason": "Malformed optional accessibility metadata: too-many-locales.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-staging-seq1.json",
+      "verification": "accept",
+      "reason": "Staging payload matches the staging configuration and environment manifest URL.",
+      "config": "staging"
+    },
+    {
+      "file": "manifests/invalid-staging-with-production-config.json",
+      "verification": "reject",
+      "reason": "The identical signed staging payload must be rejected under the production configuration.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-cells-appearance-seq4.json",
+      "verification": "accept",
+      "reason": "Dark appearance selects ridge; the legacy control/any artwork remains coast.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-cells-arm-seq5.json",
+      "verification": "accept",
+      "reason": "Arm b selects ridge without an appearance coordinate.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-cells-arm-appearance-seq6.json",
+      "verification": "accept",
+      "reason": "Exact arm/appearance wins before arm/any, control/appearance, and legacy artwork.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-variants-without-cells-seq7.json",
+      "verification": "accept",
+      "reason": "Declared axes without cells are valid and resolve legacy artwork.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-cells-with-ignored-states-seq8.json",
+      "verification": "accept",
+      "reason": "Native clients ignore slot/cell states and validate and resolve the cell top-level image; the state family also satisfies JavaScript validation.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid-cells-undeclared-appearance.json",
+      "verification": "reject",
+      "reason": "Cell appearance must be declared. Re-signed with valid legacy image fields.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid-cells-undeclared-arm.json",
+      "verification": "reject",
+      "reason": "Cell arm must be declared. Re-signed with valid legacy image fields.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid-cells-duplicate-coordinates.json",
+      "verification": "reject",
+      "reason": "No two cells may share a coordinate; cell count remains within the valid bound. Re-signed with valid legacy image fields.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid-cells-no-coordinates.json",
+      "verification": "reject",
+      "reason": "Each cell needs an arm or appearance coordinate. Re-signed with valid legacy image fields.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid-cells-without-variants.json",
+      "verification": "reject",
+      "reason": "Cells require declared variants. Re-signed with valid legacy image fields.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid-cells-without-version.json",
+      "verification": "reject",
+      "reason": "Cells require variantSchemaVersion 1. Re-signed with valid legacy image fields.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid-variant-version-2.json",
+      "verification": "reject",
+      "reason": "Unknown variant schema versions must be rejected. Re-signed with valid legacy image fields.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid-cells-bad-sha.json",
+      "verification": "reject",
+      "reason": "Cell image fields receive the same validation as slot image fields. Re-signed with valid legacy image fields.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid-cells-reserved-arm.json",
+      "verification": "reject",
+      "reason": "Reserved control cannot be declared as an arm or used as an explicit cell coordinate. Re-signed with valid legacy image fields.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid-variants-too-many-arms.json",
+      "verification": "reject",
+      "reason": "At most four non-control arms may be declared. Re-signed with valid legacy image fields.",
+      "config": "production"
+    }
+  ],
+  "configs": {
+    "production": "config.json",
+    "staging": "config-staging.json"
+  },
+  "resolution": [
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "arm": "b",
+        "appearance": "dark"
+      },
+      "expect": {
+        "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "arm": "b",
+        "appearance": "dark",
+        "armSource": "explicit"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "arm": "b",
+        "appearance": "light"
+      },
+      "expect": {
+        "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "arm": "b",
+        "appearance": null,
+        "armSource": "explicit"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "arm": "control",
+        "appearance": "dark"
+      },
+      "expect": {
+        "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "arm": null,
+        "appearance": "dark",
+        "armSource": "explicit"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "arm": "control",
+        "appearance": "light"
+      },
+      "expect": {
+        "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "arm": null,
+        "appearance": null,
+        "armSource": "explicit"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "appearance": "dark"
+      },
+      "expect": {
+        "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "arm": null,
+        "appearance": "dark",
+        "armSource": "control"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "appearance": "light"
+      },
+      "expect": {
+        "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "arm": null,
+        "appearance": null,
+        "armSource": "control"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "arm": "b"
+      },
+      "expect": {
+        "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "arm": "b",
+        "appearance": null,
+        "armSource": "explicit"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {},
+      "expect": {
+        "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "arm": null,
+        "appearance": null,
+        "armSource": "control"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "decision": "zzz",
+        "appearance": "dark"
+      },
+      "expect": {
+        "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "arm": null,
+        "appearance": "dark",
+        "armSource": "invalid-decision"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "arm": "zzz",
+        "appearance": "dark"
+      },
+      "expect": {
+        "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "arm": null,
+        "appearance": "dark",
+        "armSource": "explicit"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "arm": "zzz"
+      },
+      "expect": {
+        "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "arm": null,
+        "appearance": null,
+        "armSource": "explicit"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "decision": "b",
+        "appearance": "dark"
+      },
+      "expect": {
+        "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "arm": "b",
+        "appearance": "dark",
+        "armSource": "decision"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-appearance-seq6.json",
+      "request": {
+        "decision": "b",
+        "appearance": "light"
+      },
+      "expect": {
+        "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "arm": "b",
+        "appearance": null,
+        "armSource": "decision"
+      }
+    },
+    {
+      "manifest": "manifests/valid-seq1.json",
+      "request": {
+        "arm": "b",
+        "appearance": "dark"
+      },
+      "expect": {
+        "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "arm": null,
+        "appearance": null,
+        "armSource": "explicit"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-appearance-seq4.json",
+      "request": {
+        "appearance": "dark"
+      },
+      "expect": {
+        "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "arm": null,
+        "appearance": "dark",
+        "armSource": "control"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-arm-seq5.json",
+      "request": {
+        "arm": "b",
+        "appearance": "dark"
+      },
+      "expect": {
+        "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "arm": "b",
+        "appearance": null,
+        "armSource": "explicit"
+      }
+    },
+    {
+      "manifest": "manifests/valid-variants-without-cells-seq7.json",
+      "request": {
+        "arm": "b",
+        "appearance": "dark"
+      },
+      "expect": {
+        "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "arm": null,
+        "appearance": null,
+        "armSource": "explicit"
+      }
+    },
+    {
+      "manifest": "manifests/valid-cells-with-ignored-states-seq8.json",
+      "request": {
+        "appearance": "dark"
+      },
+      "expect": {
+        "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "arm": null,
+        "appearance": "dark",
+        "armSource": "control"
+      }
     }
   ],
   "stateful": [

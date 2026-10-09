@@ -2,6 +2,14 @@ import SwiftUI
 import Observation
 import ImageIO
 
+/// A synchronous snapshot pairing a native image with its optional content description.
+/// Read inside the view body. No accessibility modifiers are applied automatically.
+public struct AssetArtwork {
+    public let image: Image
+    public let accessibilityDescription: String?
+    public let source: AssetSource
+}
+
 /// Read image(in:) inside a SwiftUI body. The returned Image remains fully native and caller-modifiable.
 @MainActor @Observable
 public final class AssetImageStore {
@@ -10,6 +18,14 @@ public final class AssetImageStore {
     public private(set) var lastError: String?
     public private(set) var connected = false
     public private(set) var isLoading = false
+    /// Feed the view's color scheme here, then explicitly refresh to load that appearance.
+    public var appearance: AssetAppearance? {
+        didSet { if appearance != oldValue { invalidateSelection() } }
+    }
+    /// Per-reference explicit arm assignments. Use "control" to bypass the decision callback.
+    public var arm: [AssetReference: String] = [:] {
+        didSet { if arm != oldValue { invalidateSelection() } }
+    }
     private var images: [AssetReference: Image] = [:]
     @ObservationIgnored private var imageCosts: [AssetReference: Int] = [:]
     @ObservationIgnored private var imageOrder: [AssetReference] = []
@@ -30,7 +46,25 @@ public final class AssetImageStore {
         images.removeAll(); results.removeAll(); release = 0; lastError = nil
         imageCosts.removeAll(); imageOrder.removeAll()
     }
+    private func invalidateSelection() {
+        generation &+= 1
+        isLoading = false
+        images.removeAll(); results.removeAll()
+        imageCosts.removeAll(); imageOrder.removeAll()
+    }
     public func image(for reference: AssetReference, fallback: Image) -> Image { images[reference] ?? fallback }
+
+    /// Opt in to paired descriptions. Informative placements can keep their bundled image when a
+    /// remote release has no description. The app still owns its label, hiding, and control traits.
+    public func artwork(for reference: AssetReference, fallback: Image,
+                        bundledAccessibility: AssetAccessibility? = nil, locale: Locale = .current,
+                        requireDescription: Bool = false) -> AssetArtwork {
+        if let image = images[reference], let result = results[reference],
+           !requireDescription || result.accessibility != nil {
+            return AssetArtwork(image: image, accessibilityDescription: result.accessibility?.localizedDescription(locale: locale), source: result.source)
+        }
+        return AssetArtwork(image: fallback, accessibilityDescription: bundledAccessibility?.localizedDescription(locale: locale), source: .bundle)
+    }
 
     /// Explicit lifecycle work; getters never start requests. A generation check blocks stale connection results.
     /// Supply physical pixel targets for known layouts; omitted entries use the logical reference size.
@@ -38,13 +72,15 @@ public final class AssetImageStore {
         guard let client else { return }
         generation &+= 1
         let operation = generation
+        let requestedAppearance = appearance
+        let requestedArms = arm
         isLoading = true
         defer { if generation == operation { isLoading = false } }
         let initial = await client.initialize()
         guard generation == operation, !Task.isCancelled else { return }
         release = initial.sequence
         for reference in references {
-            let resolved = await client.resolve(reference, download: false, targetPixels: targetPixels[reference])
+            let resolved = await client.resolve(reference, download: false, targetPixels: targetPixels[reference], appearance: requestedAppearance, arm: requestedArms[reference])
             guard generation == operation, !Task.isCancelled else { return }
             apply(resolved, for: reference)
         }
@@ -52,7 +88,7 @@ public final class AssetImageStore {
         guard generation == operation, !Task.isCancelled else { return }
         release = refreshed.sequence; lastError = refreshed.error
         for reference in references {
-            let resolved = await client.resolve(reference, download: refreshed.error == nil, targetPixels: targetPixels[reference])
+            let resolved = await client.resolve(reference, download: refreshed.error == nil, targetPixels: targetPixels[reference], appearance: requestedAppearance, arm: requestedArms[reference])
             guard generation == operation, !Task.isCancelled else { return }
             apply(resolved, for: reference)
         }

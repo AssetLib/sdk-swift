@@ -16,10 +16,10 @@ artwork.travel.coast
 
 ## Install
 
-Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.2.0-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
+Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.2.1-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
 
 ```swift
-.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.2.0-preview.1")
+.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.2.1-preview.1")
 ```
 
 The runnable [SwiftUI travel demo](https://github.com/AssetLib/demo-ios) includes bundled illustrations, generated accessors, and a connection sheet. It works before you create an account.
@@ -48,7 +48,7 @@ struct WelcomeView: View {
         artwork.travel.coast
             .resizable()
             .scaledToFit()
-            .accessibilityLabel("An illustrated coastal escape")
+            .accessibilityHidden(true) // Decorative welcome artwork.
             .task {
                 images.connect(client)
                 await images.refresh(AssetCatalog.all)
@@ -58,6 +58,77 @@ struct WelcomeView: View {
 ```
 
 Call `refresh` at explicit lifecycle points such as foregrounding, a refresh gesture, or a user action. There is no background polling. The store loads verified cached artwork first, then checks for a release. A generation token prevents old connection tasks from replacing a new connection's images. `disconnect()` immediately restores caller-provided fallbacks; it preserves durable release history to prevent accidental downgrade when reconnecting.
+
+## Appearance, arms, and staging
+
+Feed SwiftUI's color scheme into the store and refresh when it changes. Generated `AppArtwork` accessors stay the same:
+
+```swift
+struct AdaptiveWelcomeView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var images = AssetImageStore()
+    let client: AssetClient
+    private var artwork: AppArtwork { AppArtwork(store: images) }
+
+    var body: some View {
+        artwork.travel.coast
+            .resizable()
+            .scaledToFit()
+            .accessibilityHidden(true)
+            .task(id: colorScheme) {
+                if !images.connected { images.connect(client) }
+                images.appearance = colorScheme == .dark ? .dark : .light
+                await images.refresh(AssetCatalog.all)
+            }
+    }
+}
+```
+
+Set `images.arm[AssetCatalog.Travel.coast] = "b"` for an explicit override, or `"control"` to force control. Remove the map entry to use the client's decision callback. Changing `appearance` or `arm` clears old displayed results and invalidates in-flight store updates; call `refresh` to load the new selection. Direct callers use `client.resolve(reference, appearance: .dark, arm: "b")`.
+
+The client initializer accepts `decide: (@Sendable (String, [String]) async -> String?)?`, receiving the placement key and declared arms. Without an override it runs once per resolution when the current placement declares arms. A nil or undeclared result (including `"control"`) uses control with `.invalidDecision`; absent callbacks use `.control`. Keep this callback for assignment only, avoid calling delivery operations on the same client from it, and log exposure with the app's experiment tool after rendering. The store may resolve once for cached artwork and again after refreshing the manifest.
+
+Resolution tries `(arm, appearance)`, `(arm, any)`, `(control, appearance)`, then the legacy slot image. Omitted axes skip the corresponding steps; artwork is never borrowed from another arm. `ResolvedAsset.appearance` and `.arm` describe the selected cell (nil means any/control), and `.armSource` records `.explicit`, `.decision`, `.control`, or `.invalidDecision`. Cache and historical fallback verify the selected cell's image and rendition hashes, with its own accessibility metadata. Native clients ignore slot and cell state sets.
+
+Public configuration accepts `staging` or `production` and requires the signed payload to match exactly. Use the console's environment-specific configuration: `/api/delivery/{orgId}/{appId}/environments/{environment}/manifest`. The legacy `/api/delivery/{orgId}/{appId}/manifest` path is production-only. Staging and production configurations use separate durable storage namespaces.
+
+## Accessibility
+
+SDK `0.2.1-preview.1` adds optional localized artwork descriptions. Images stay native: the app chooses whether a placement is decorative, informative, or part of a control. Generated raw images do not announce filenames or automatically attach content descriptions.
+
+For informative artwork, put `bundledAccessibility` on the placement in your offline catalog, describing the bundled image:
+
+```json
+"bundledAccessibility": {
+  "defaultLocale": "en",
+  "descriptions": { "en": "A coastal landscape with blue water and cliffs" }
+}
+```
+
+Regenerate the catalog. Read the generated artwork snapshot inside the view body; its image and description belong together:
+
+```swift
+@Environment(\.locale) private var locale
+
+// Inside body, using the same store and refresh lifecycle as WelcomeView:
+let coast = artwork.travel.coastArtwork(locale: locale, requireDescription: true)
+if let description = coast.accessibilityDescription {
+    coast.image
+        .resizable()
+        .scaledToFit()
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isImage)
+        .accessibilityLabel(Text(verbatim: description))
+} else {
+    Text("Explore coastal trips") // App-owned content if no described fallback exists.
+}
+```
+
+`requireDescription: true` keeps the bundled fallback when downloaded or cached artwork has no description. It controls display selection; it does not prevent downloading. Without that option, an undescribed remote image returns a nil description, never the bundled image's description. Supply a bundled description for informative placements. `locale:` matches exact tags case-insensitively, then progressively less specific tags, then the metadata's explicit default locale. Read the SwiftUI locale environment so in-app language changes update the displayed label without another download.
+
+The console stores optional descriptions with each asset and snapshots them in signed releases. The client returns `resolved.accessibility` from the release that actually supplied its bytes, including retained cache fallback. A description edit requires publishing a new release; an offline device continues using its signed cached description. Rollback restores the earlier image and description together. The store snapshot also handles decoding failures, eviction, disconnect, and missing metadata without mixing remote and bundled descriptions.
+
+Use `.accessibilityHidden(true)` for decorative images. The informative example explicitly creates an accessibility element before applying its label. Keep action labels on their containing control, for example `Button("Explore coastal trips", action: openTrips)` with decorative artwork. You can always apply your own `.accessibilityLabel(...)` to the native image when app context supplies the right meaning. No automatic announcement is posted during refresh, and text alternatives are not a substitute for accessible surrounding controls or layout. Verify the finished screen with VoiceOver using Apple's [accessibility guidance](https://developer.apple.com/documentation/swiftui/accessibility-fundamentals).
 
 ## Choose a raster rendition
 
@@ -99,14 +170,14 @@ An existing placement can receive new compatible artwork without rebuilding the 
 
 ## Delivery and failure behavior
 
-- Only pinned Ed25519 manifests for the configured organization, app, and production environment are accepted. Signatures cover exact UTF-8 payload bytes; key IDs cover exact PEM bytes.
+- Only pinned Ed25519 manifests for the configured organization, app, and environment (staging or production) are accepted. Signatures cover exact UTF-8 payload bytes; key IDs cover exact PEM bytes.
 - Delivery uses HTTPS, exact scoped paths, the same origin, no cookies or credential storage, no redirects, bounded streaming, and an 8-second request deadline by default.
 - Release sequences cannot decrease. Equal-sequence payload changes are rejected using byte equality, including Unicode-equivalent strings. Rollback is a new higher sequence pointing to earlier artwork.
 - State is re-read and signatures reverified per operation and after manifest downloads. Atomic disk commits use an OS lock and reject another client's newer state. Invalid durable state fails closed to bundled artwork.
 - Image length, SHA-256, PNG/WebP container, native decode, and dimensions are validated. Renditions must exactly match their declared physical dimensions; legacy WebP retains its logical aspect-ratio rule. A current download failure can use verified cached artwork from a retained older release; older releases are never fetched as fallback.
 - Limits: 256 KiB manifest, 8 MiB image, 100 slots, eight retained manifests, 3 MiB state, 50 MiB/100 disk cache entries. Native decoding additionally limits dimensions to 8,192 per axis and 16 megapixels; the image store keeps at most 32 images/64 MiB of decoded pixel buffers. Images retained by app views are outside that store budget.
 
-This preview handles still PNG/WebP artwork through signed rendition extension v1 and WebP legacy fallback. It does not implement Figma import, experiments, usage analytics, automatic screen discovery, native Background Assets, push updates, or key rotation. A plain image cannot report whether it was visible, and layout modifiers do not tell the downloader a desired rendition.
+This preview handles still PNG/WebP artwork through signed rendition extension v1 and WebP legacy fallback. It does not implement Figma import, built-in experiment assignment or tracking, usage analytics, automatic screen discovery, native Background Assets, push updates, or key rotation. A plain image cannot report whether it was visible, and layout modifiers do not tell the downloader a desired rendition.
 
 ## Test
 
@@ -116,7 +187,7 @@ python3 scripts/test_codegen.py
 swift build -c release
 ```
 
-The committed test-only corpus contains signed interoperability cases shared with the JavaScript and Kotlin clients. Tests cover signatures, scope, malformed payloads, exact-byte equivocation, all 65 shared signed cases, four shared rendition selection scenarios, real ImageIO PNG/WebP decoding, exact rendition dimensions, target-size ranking, candidate failure, cache migration, mismatched layouts, rollback, corrupted bytes, offline restart, concurrent storage clients, and corrupt durable state.
+The committed test-only corpus contains signed interoperability cases shared with the JavaScript and Kotlin clients. Tests cover signatures, scope, malformed payloads, exact-byte equivocation, all 100 shared signed cases, 18 shared cell resolution scenarios, four shared rendition selection scenarios, real ImageIO PNG/WebP decoding, exact rendition dimensions, target-size ranking, candidate failure, cache migration, mismatched layouts, rollback, corrupted bytes, offline restart, concurrent storage clients, and corrupt durable state. Variant tests cover staging isolation, strict axes and cell validation, decisions, cell-specific cache and historical fallback, and store selection changes. Accessibility cases cover locale selection, malformed metadata, UTF-16 limits, paired historical descriptions, offline restart, missing remote descriptions, and native image snapshots with described bundled fallback.
 
 An optional read-only hosted test takes a path to your public configuration outside the repository:
 

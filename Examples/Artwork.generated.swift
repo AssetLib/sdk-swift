@@ -20,13 +20,22 @@ enum AssetCatalog {
     @MainActor struct `Travel` {
         let store: AssetImageStore
         let bundle: Bundle
-        var `coast`: Image { store.image(for: AssetCatalog.`Travel`.`coast`, fallback: Image("coast", bundle: bundle)) }
-        var `ridge`: Image { store.image(for: AssetCatalog.`Travel`.`ridge`, fallback: Image("ridge", bundle: bundle)) }
+        var `coast`: Image { store.image(for: AssetCatalog.`Travel`.`coast`, fallback: Image(decorative: "coast", bundle: bundle)) }
+        func `coastArtwork`(locale: Locale = .current, requireDescription: Bool = false) -> AssetArtwork {
+            store.artwork(for: AssetCatalog.`Travel`.`coast`, fallback: Image(decorative: "coast", bundle: bundle), bundledAccessibility: try! AssetAccessibility(defaultLocale: "en", descriptions: ["en": "A coastal landscape with blue water and cliffs"]), locale: locale, requireDescription: requireDescription)
+        }
+        var `ridge`: Image { store.image(for: AssetCatalog.`Travel`.`ridge`, fallback: Image(decorative: "ridge", bundle: bundle)) }
+        func `ridgeArtwork`(locale: Locale = .current, requireDescription: Bool = false) -> AssetArtwork {
+            store.artwork(for: AssetCatalog.`Travel`.`ridge`, fallback: Image(decorative: "ridge", bundle: bundle), bundledAccessibility: try! AssetAccessibility(defaultLocale: "en", descriptions: ["en": "A mountain landscape with layered ridges"]), locale: locale, requireDescription: requireDescription)
+        }
     }
     var `tasks`: `Tasks` { `Tasks`(store: store, bundle: bundle) }
     @MainActor struct `Tasks` {
         let store: AssetImageStore
         let bundle: Bundle
-        var `garden`: Image { store.image(for: AssetCatalog.`Tasks`.`garden`, fallback: Image("garden", bundle: bundle)) }
+        var `garden`: Image { store.image(for: AssetCatalog.`Tasks`.`garden`, fallback: Image(decorative: "garden", bundle: bundle)) }
+        func `gardenArtwork`(locale: Locale = .current, requireDescription: Bool = false) -> AssetArtwork {
+            store.artwork(for: AssetCatalog.`Tasks`.`garden`, fallback: Image(decorative: "garden", bundle: bundle), bundledAccessibility: try! AssetAccessibility(defaultLocale: "en", descriptions: ["en": "A small garden of green plants"]), locale: locale, requireDescription: requireDescription)
+        }
     }
 }

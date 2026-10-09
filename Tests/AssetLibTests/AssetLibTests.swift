@@ -13,6 +13,23 @@ private func temporaryRoot() throws -> URL {
 }
 private let coast = AssetReference(key: "travel.coast", width: 1200, height: 900)
 
+private struct InteropCases: Decodable {
+    struct Manifest: Decodable { let file: String; let verification: String; let config: String? }
+    struct Stateful: Decodable { let initialState: String; let next: String; let expected: String }
+    struct ByteFailure: Decodable { let manifest: String; let body: String; let reason: String }
+    let config: String
+    let configs: [String: String]
+    let manifests: [Manifest]
+    let stateful: [Stateful]
+    let byteFailures: [ByteFailure]
+
+    func configuration(_ name: String? = nil) throws -> AssetConfiguration {
+        let key = name ?? "production"
+        let file = try #require(configs[key] ?? (key == "production" ? config : nil))
+        return try .parse(fixture(file))
+    }
+}
+
 private actor FixtureTransport: AssetTransport {
     var manifest: Data
     var image: Data?
@@ -34,19 +51,18 @@ private actor FixtureTransport: AssetTransport {
 
 @Suite struct ProtocolTests {
     @Test func sharedInteropManifestCases() throws {
-        struct Cases: Decodable {
-            struct Entry: Decodable { let file: String; let verification: String }
-            let manifests: [Entry]
-        }
-        let cases = try JSONDecoder().decode(Cases.self, from: fixture("cases.json"))
+        let cases = try JSONDecoder().decode(InteropCases.self, from: fixture("cases.json"))
         for entry in cases.manifests {
             let envelope = try JSONDecoder().decode(SignedManifest.self, from: fixture(entry.file))
+            let configuration = try cases.configuration(entry.config)
             if entry.verification == "accept" {
-                #expect(throws: Never.self, "\(entry.file)") { _ = try ManifestVerifier.verify(envelope, config: config()) }
+                #expect(throws: Never.self, "\(entry.file)") { _ = try ManifestVerifier.verify(envelope, config: configuration) }
             } else {
-                #expect(throws: (any Error).self, "\(entry.file)") { _ = try ManifestVerifier.verify(envelope, config: config()) }
+                #expect(entry.verification == "reject")
+                #expect(throws: AssetLibError.self, "\(entry.file)") { _ = try ManifestVerifier.verify(envelope, config: configuration) }
             }
         }
+        #expect(try cases.configuration() == cases.configuration("production"))
     }
 
     @Test func rejectsUnsafePublicConfiguration() throws {
@@ -97,15 +113,28 @@ private actor FixtureTransport: AssetTransport {
     }
 
     @Test func persistedStaleEquivocationAndIdempotence() async throws {
-        for file in ["stateful/stale-seq1", "stateful/equivocation-seq2", "stateful/reformatted-seq2", "stateful/unicode-equivalent-seq2", "valid-seq2"] {
+        let cases = try JSONDecoder().decode(InteropCases.self, from: fixture("cases.json"))
+        for entry in cases.stateful {
             let root = try temporaryRoot(); defer { try? FileManager.default.removeItem(at: root) }
-            let configuration = try config()
+            let configuration = try cases.configuration()
             let storage = try FileAssetStorage(configuration: configuration, root: root)
-            try await storage.saveState(fixture("state/after-seq2.json"))
-            let client = try AssetClient(configuration: configuration, storage: storage, transport: FixtureTransport("manifests/\(file).json"))
+            let initial = try fixture(entry.initialState)
+            try await storage.saveState(initial)
+            let client = try AssetClient(configuration: configuration, storage: storage, transport: FixtureTransport(entry.next))
             let result = await client.refresh()
-            #expect(result.sequence == 2 && !result.updated)
-            #expect((result.error == nil) == (file == "valid-seq2"))
+            switch entry.expected {
+            case "reject-preserve-sequence-2":
+                #expect(result.sequence == 2 && !result.updated && result.error != nil, "\(entry.next)")
+                #expect(try await storage.loadState() == initial)
+            case "idempotent-sequence-2":
+                #expect(result.sequence == 2 && !result.updated && result.error == nil, "\(entry.next)")
+                #expect(try await storage.loadState() == initial)
+            case "accept-sequence-3-coast":
+                #expect(result.sequence == 3 && result.updated && result.error == nil, "\(entry.next)")
+                #expect(await client.resolve(coast).sha256 == hashBytes(try fixture("assets/coast.webp")))
+            default:
+                Issue.record("Unhandled shared stateful expectation: \(entry.expected)")
+            }
         }
     }
 
@@ -116,11 +145,12 @@ private actor FixtureTransport: AssetTransport {
         let client = try AssetClient(configuration: configuration, storage: FileAssetStorage(configuration: configuration, root: root), transport: transport)
         _ = await client.refresh()
         let first = await client.resolve(coast)
-        for bad in ["ridge-tampered.webp", "ridge-truncated.webp"] {
-            try await transport.set(manifest: "manifests/valid-seq2.json", image: "assets/\(bad)")
+        let cases = try JSONDecoder().decode(InteropCases.self, from: fixture("cases.json"))
+        for entry in cases.byteFailures {
+            try await transport.set(manifest: entry.manifest, image: entry.body)
             _ = await client.refresh()
             let fallback = await client.resolve(coast)
-            #expect(fallback.source == .cache && fallback.sequence == 1 && fallback.sha256 == first.sha256)
+            #expect(fallback.source == .cache && fallback.sequence == 1 && fallback.sha256 == first.sha256, "\(entry.reason)")
         }
     }
 

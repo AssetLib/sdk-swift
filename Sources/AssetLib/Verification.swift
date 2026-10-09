@@ -26,7 +26,12 @@ enum ManifestVerifier {
         }
         let key = try Curve25519.Signing.PublicKey(rawRepresentation: rawPublicKey(config.pinnedPublicKey))
         guard key.isValidSignature(signature, for: Data(envelope.payload.utf8)) else { throw AssetLibError.invalid("Manifest signature verification failed.") }
-        let payload = try JSONDecoder().decode(ManifestPayload.self, from: Data(envelope.payload.utf8))
+        let payload: ManifestPayload
+        do {
+            payload = try JSONDecoder().decode(ManifestPayload.self, from: Data(envelope.payload.utf8))
+        } catch {
+            throw AssetLibError.invalid("Invalid manifest payload: \(error.localizedDescription)")
+        }
         let date = ISO8601DateFormatter()
         date.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let fractional = date.date(from: payload.createdAt)
@@ -34,38 +39,85 @@ enum ManifestVerifier {
         guard payload.schemaVersion == 1, payload.orgId == config.orgId, payload.appId == config.appId,
               payload.environment == config.environment, (1...2_147_483_647).contains(payload.sequence),
               fractional != nil || date.date(from: payload.createdAt) != nil, (1...100).contains(payload.slots.count),
-              payload.renditionSchemaVersion == nil || payload.renditionSchemaVersion == 1 else {
+              payload.renditionSchemaVersion == nil || payload.renditionSchemaVersion == 1,
+              payload.variantSchemaVersion == nil || payload.variantSchemaVersion == 1 else {
             throw AssetLibError.invalid("Unsupported or cross-app manifest payload.")
         }
         var keys = Set<String>()
         for slot in payload.slots {
             guard validReference(.init(key: slot.key, width: slot.width, height: slot.height)), keys.insert(slot.key).inserted,
-                  slot.screen.utf16.count <= 120, matches(slot.assetId, uuidPattern), matches(slot.sha256, hashPattern),
-                  slot.mime == "image/webp", (1...AssetLimits.assetBytes).contains(slot.bytes) else {
+                  slot.screen.utf16.count <= 120 else {
                 throw AssetLibError.invalid("Invalid or unsupported placement in manifest.")
             }
-            _ = try assetURL(slot, config: config)
-            if let renditions = slot.renditions {
-                guard payload.renditionSchemaVersion == 1, (1...7).contains(renditions.count) else {
-                    throw AssetLibError.invalid("Unsupported rendition extension or count.")
-                }
-                var hashes = Set<String>()
-                for rendition in renditions {
-                    let ratio = Double(slot.width) / Double(slot.height)
-                    guard matches(rendition.sha256, hashPattern), hashes.insert(rendition.sha256).inserted,
-                          ["image/webp", "image/png", "image/svg+xml"].contains(rendition.mime),
-                          (1...AssetLimits.assetBytes).contains(rendition.bytes),
-                          rendition.mime != "image/svg+xml" || rendition.bytes <= 262_144,
-                          (1...8192).contains(rendition.width), (1...8192).contains(rendition.height),
-                          rendition.width * rendition.height <= AssetLimits.decodedPixels,
-                          abs(Double(rendition.width) / Double(rendition.height) - ratio) / ratio <= 0.02 else {
-                        throw AssetLibError.invalid("Invalid rendition metadata.")
-                    }
-                    _ = try candidateURL(AssetCandidate(rendition), assetID: slot.assetId, config: config)
-                }
-            }
+            try validateImage(slot, renditionSchemaVersion: payload.renditionSchemaVersion, config: config)
+            try validateVariants(slot, variantSchemaVersion: payload.variantSchemaVersion,
+                                 renditionSchemaVersion: payload.renditionSchemaVersion, config: config)
         }
         return payload
+    }
+
+    private static func validateImage(_ slot: ManifestSlot, renditionSchemaVersion: Int?, config: AssetConfiguration) throws {
+        guard matches(slot.assetId, uuidPattern), matches(slot.sha256, hashPattern),
+              slot.mime == "image/webp", (1...AssetLimits.assetBytes).contains(slot.bytes) else {
+            throw AssetLibError.invalid("Invalid or unsupported image descriptor in manifest.")
+        }
+        _ = try assetURL(slot, config: config)
+        if let renditions = slot.renditions {
+            guard renditionSchemaVersion == 1, (1...7).contains(renditions.count) else {
+                throw AssetLibError.invalid("Unsupported rendition extension or count.")
+            }
+            var hashes = Set<String>()
+            for rendition in renditions {
+                let ratio = Double(slot.width) / Double(slot.height)
+                guard matches(rendition.sha256, hashPattern), hashes.insert(rendition.sha256).inserted,
+                      ["image/webp", "image/png", "image/svg+xml"].contains(rendition.mime),
+                      (1...AssetLimits.assetBytes).contains(rendition.bytes),
+                      rendition.mime != "image/svg+xml" || rendition.bytes <= 262_144,
+                      (1...8192).contains(rendition.width), (1...8192).contains(rendition.height),
+                      rendition.width * rendition.height <= AssetLimits.decodedPixels,
+                      abs(Double(rendition.width) / Double(rendition.height) - ratio) / ratio <= 0.02 else {
+                    throw AssetLibError.invalid("Invalid rendition metadata.")
+                }
+                _ = try candidateURL(AssetCandidate(rendition), assetID: slot.assetId, config: config)
+            }
+        }
+    }
+
+    private static func validateVariants(_ slot: ManifestSlot, variantSchemaVersion: Int?, renditionSchemaVersion: Int?, config: AssetConfiguration) throws {
+        guard let variants = slot.variants else {
+            guard slot.cells == nil else { throw AssetLibError.invalid("Variant cells require declared variants.") }
+            return
+        }
+        guard variantSchemaVersion == 1, variants.appearance != nil || variants.arm != nil else {
+            throw AssetLibError.invalid("Unsupported or empty variant axes.")
+        }
+        if let appearances = variants.appearance {
+            guard (1...2).contains(appearances.count), Set(appearances).count == appearances.count else {
+                throw AssetLibError.invalid("Invalid appearance variants.")
+            }
+        }
+        if let arms = variants.arm {
+            let reserved = ["control", "any", "constructor", "prototype", "__proto__"]
+            guard (1...4).contains(arms.count), Set(arms).count == arms.count,
+                  arms.allSatisfy({ matches($0, "^[a-z][a-z0-9_-]{0,19}\\z") && !reserved.contains($0) }) else {
+                throw AssetLibError.invalid("Invalid arm variants.")
+            }
+        }
+        guard let cells = slot.cells else { return }
+        let appearances = variants.appearance ?? [], arms = variants.arm ?? []
+        guard cells.count <= (arms.count + 1) * (appearances.count + 1) - 1 else {
+            throw AssetLibError.invalid("Invalid variant cell count.")
+        }
+        var coordinates = Set<String>()
+        for cell in cells {
+            guard cell.appearance != nil || cell.arm != nil,
+                  cell.appearance.map(appearances.contains) ?? true,
+                  cell.arm.map(arms.contains) ?? true,
+                  coordinates.insert("\(cell.arm ?? "control")/\(cell.appearance?.rawValue ?? "any")").inserted else {
+                throw AssetLibError.invalid("Invalid or duplicate variant cell coordinates.")
+            }
+            try validateImage(slot.selecting(cell), renditionSchemaVersion: renditionSchemaVersion, config: config)
+        }
     }
 
     static func verifiedState(_ data: Data, config: AssetConfiguration) throws -> PersistedState {

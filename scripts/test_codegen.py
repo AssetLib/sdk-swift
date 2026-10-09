@@ -30,5 +30,32 @@ class CodeGenerationTests(unittest.TestCase):
             with self.subTest(catalog=value), self.assertRaises(ValueError):
                 generator.generate(value)
 
+    def test_description_literals_are_safe_and_raw_images_stay_native(self):
+        self.catalog["placements"][0]["bundledAccessibility"] = {
+            "defaultLocale": "en", "descriptions": {"en": 'A "coast" \\(unsafe)\n🌊', "th": "ชายฝั่ง"}
+        }
+        source = generator.generate(self.catalog)
+        self.assertIn('var `coast`: Image', source)
+        self.assertIn('Image(decorative: "coast", bundle: bundle)', source)
+        self.assertIn('func `coastArtwork`', source)
+        self.assertIn('\\\\(unsafe)', source)
+        self.assertIn('\\u{a}\\u{1f30a}', source)
+
+    def test_invalid_descriptions_and_generated_helper_collisions_fail(self):
+        for metadata in [None, {}, {"defaultLocale": "en", "descriptions": {"en": "\ufeff\u00a0"}},
+                         {"defaultLocale": "en", "descriptions": {"en": "Coast", "EN": "Other"}},
+                         {"defaultLocale": "en", "descriptions": {"en": "🌿" * 501}},
+                         {"defaultLocale": "fr", "descriptions": {"en": "Coast"}}]:
+            value = deepcopy(self.catalog); value["placements"][0]["bundledAccessibility"] = metadata
+            with self.subTest(metadata=metadata), self.assertRaises(ValueError):
+                generator.generate(value)
+        value = deepcopy(self.catalog); value["placements"][1]["symbol"] = ["Travel", "coastArtwork"]
+        with self.assertRaises(ValueError):
+            generator.generate(value)
+        for dependency in ["Locale", "AssetAccessibility", "Image", "AssetImageStore", "AssetReference"]:
+            value = deepcopy(self.catalog); value["placements"][0]["symbol"] = [dependency, "coast"]
+            with self.subTest(dependency=dependency), self.assertRaises(ValueError):
+                generator.generate(value)
+
 if __name__ == "__main__":
     unittest.main()

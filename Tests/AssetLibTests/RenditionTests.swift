@@ -3,6 +3,7 @@ import CryptoKit
 import CoreGraphics
 import ImageIO
 import Testing
+import SwiftUI
 @testable import AssetLib
 
 private func renditionFixture(_ name: String) throws -> Data {
@@ -56,10 +57,12 @@ private struct SignedRenditions {
          rendition(large, width: 1200, height: 900), rendition(small, width: 300, height: 225),
          rendition(medium, width: 600, height: 450)]
     }
-    func payload(sequence: Int = 1, variants: [[String: Any]]? = nil) -> [String: Any] {
+    func payload(sequence: Int = 1, variants: [[String: Any]]? = nil, accessibility: [String: Any]? = nil) -> [String: Any] {
         var p = original, s = slot
         p["sequence"] = sequence; p["renditionSchemaVersion"] = 1
-        s["renditions"] = variants ?? self.variants; p["slots"] = [s]
+        s["renditions"] = variants ?? self.variants
+        if let accessibility { s["accessibility"] = accessibility }
+        p["slots"] = [s]
         return p
     }
     func envelope(_ payload: [String: Any]) throws -> SignedManifest {
@@ -91,6 +94,76 @@ private actor RenditionTransport: AssetTransport {
 }
 
 @Suite struct RenditionTests {
+    @Test func accessibilityLocaleSelection() throws {
+        let metadata = try AssetAccessibility(defaultLocale: "EN", descriptions: [
+            "en": "Coastal landscape", "th": "ชายฝั่ง", "zh-Hant": "海岸風景", "en-GB": "British coast"
+        ])
+        #expect(metadata.localizedDescription(languageTag: "EN-gb") == "British coast")
+        #expect(metadata.localizedDescription(languageTag: "zh-Hant-TW") == "海岸風景")
+        #expect(metadata.localizedDescription(locale: Locale(identifier: "th_TH")) == "ชายฝั่ง")
+        #expect(metadata.localizedDescription(languageTag: "fr-CA") == "Coastal landscape")
+        #expect(throws: (any Error).self) { _ = try AssetAccessibility(defaultLocale: "en", descriptions: ["en": "\u{feff}\u{00a0}"]) }
+    }
+
+    @Test func descriptionsFollowHistoricalBytesAndOfflineRestart() async throws {
+        let f = try SignedRenditions(), root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let coast: [String: Any] = ["defaultLocale": "en", "descriptions": ["en": "Coast"]]
+        let ridge: [String: Any] = ["defaultLocale": "en", "descriptions": ["en": "Ridge"]]
+        let transport = RenditionTransport(manifest: try JSONEncoder().encode(f.envelope(f.payload(accessibility: coast))), objects: f.objects)
+        let storage = try FileAssetStorage(configuration: f.configuration, root: root)
+        let client = try AssetClient(configuration: f.configuration, storage: storage, transport: transport)
+        _ = await client.refresh()
+        let first = await client.resolve(f.reference)
+        #expect(first.source == .remote && first.accessibility?.localizedDescription(languageTag: "en") == "Coast")
+        let unavailable = try png(width: 600, height: 450, blue: 0.1)
+        var second = f.payload(sequence: 2, variants: [f.rendition(unavailable, width: 600, height: 450)], accessibility: ridge)
+        var slots = second["slots"] as! [[String: Any]]
+        slots[0]["sha256"] = String(repeating: "c", count: 64); second["slots"] = slots
+        await transport.update(manifest: try JSONEncoder().encode(f.envelope(second)), objects: [:])
+        _ = await client.refresh()
+        let retained = await client.resolve(f.reference)
+        #expect(retained.source == .cache && retained.sequence == 1 && retained.sha256 == first.sha256)
+        #expect(retained.accessibility?.localizedDescription(languageTag: "en") == "Coast")
+        let restart = try AssetClient(configuration: f.configuration, storage: FileAssetStorage(configuration: f.configuration, root: root), transport: transport)
+        let offline = await restart.resolve(f.reference, download: false)
+        #expect(offline.accessibility == retained.accessibility && offline.sequence == 1)
+        let missing = await restart.resolve(.init(key: "unknown.art", width: 600, height: 450))
+        #expect(missing.source == .bundle && missing.accessibility == nil)
+        // Descriptions may be revised with a new signed release even when bytes are unchanged.
+        await transport.update(manifest: try JSONEncoder().encode(f.envelope(f.payload(sequence: 3, accessibility: ridge))), objects: [:])
+        _ = await client.refresh()
+        let revised = await client.resolve(f.reference)
+        #expect(revised.sha256 == first.sha256 && revised.sequence == 3)
+        #expect(revised.accessibility?.localizedDescription(languageTag: "en") == "Ridge")
+    }
+
+    @MainActor @Test func artworkSnapshotNeverMixesBundledAndRemoteDescriptions() async throws {
+        let f = try SignedRenditions(), root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let bundle = try AssetAccessibility(defaultLocale: "en", descriptions: ["en": "Bundled coast", "th": "ชายฝั่ง"])
+        let fallback = Image(decorative: "coast")
+        let store = AssetImageStore()
+        func artwork(_ requireDescription: Bool = false) -> AssetArtwork {
+            store.artwork(for: f.reference, fallback: fallback, bundledAccessibility: bundle, locale: Locale(identifier: "en"), requireDescription: requireDescription)
+        }
+        #expect(artwork().source == .bundle && artwork().accessibilityDescription == "Bundled coast")
+        let transport = RenditionTransport(manifest: try f.manifest(), objects: f.objects)
+        store.connect(try AssetClient(configuration: f.configuration, storage: FileAssetStorage(configuration: f.configuration, root: root), transport: transport))
+        await store.refresh([f.reference])
+        #expect(artwork().source == .remote && artwork().accessibilityDescription == nil)
+        #expect(artwork(true).source == .bundle && artwork(true).accessibilityDescription == "Bundled coast")
+        let metadata: [String: Any] = ["defaultLocale": "en", "descriptions": ["en": "Published coast", "th": "ทะเล"]]
+        await transport.update(manifest: try JSONEncoder().encode(f.envelope(f.payload(sequence: 2, accessibility: metadata))), objects: f.objects)
+        await store.refresh([f.reference])
+        #expect(artwork(true).source == .cache && artwork(true).accessibilityDescription == "Published coast")
+        #expect(store.artwork(for: f.reference, fallback: fallback, bundledAccessibility: bundle, locale: Locale(identifier: "th-TH")).accessibilityDescription == "ทะเล")
+        // Image remains native and modifiers compile without a wrapper view.
+        let _: Image = artwork().image.resizable()
+        store.disconnect()
+        #expect(artwork().source == .bundle && artwork().accessibilityDescription == "Bundled coast")
+    }
+
     @Test func sharedRenditionSelectionAndNativeDecoding() async throws {
         struct Matrix: Decodable {
             struct File: Decodable { let file: String; let sha256: String }

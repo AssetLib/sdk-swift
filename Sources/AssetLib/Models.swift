@@ -33,6 +33,14 @@ public struct AssetPixelSize: Hashable, Sendable {
 /// Native formats supported by this SDK. SVG metadata is verified but never downloaded or rendered.
 public enum AssetFormat: String, Sendable { case webP = "image/webp", png = "image/png" }
 
+public enum AssetAppearance: String, Codable, Sendable { case light, dark }
+
+/// Records the arm input; `ResolvedAsset.arm` identifies the cell actually selected.
+public enum AssetArmSource: String, Codable, Sendable {
+    case explicit, decision, control
+    case invalidDecision = "invalid-decision"
+}
+
 public struct AssetConfiguration: Codable, Sendable, Equatable {
     public let schemaVersion: Int
     public let orgId: String
@@ -51,13 +59,16 @@ public struct AssetConfiguration: Codable, Sendable, Equatable {
     }
 
     public func validate() throws {
-        guard schemaVersion == 1, environment == "production", matches(orgId, uuidPattern), matches(appId, uuidPattern),
+        guard schemaVersion == 1, ["staging", "production"].contains(environment), matches(orgId, uuidPattern), matches(appId, uuidPattern),
               pinnedPublicKey.utf8.count <= 256 else { throw AssetLibError.invalid("Invalid Assetlib public configuration.") }
         _ = try ManifestVerifier.rawPublicKey(pinnedPublicKey)
         guard keyId == nil || keyId == signingKeyID else { throw AssetLibError.invalid("Signing key ID does not match the pinned key.") }
+        let deliveryPath = "/api/delivery/\(orgId)/\(appId)"
+        let environmentPath = "\(deliveryPath)/environments/\(environment)/manifest"
         guard let parts = URLComponents(string: manifestUrl), parts.scheme == "https", let host = parts.host, !host.isEmpty,
               parts.user == nil, parts.password == nil, parts.query == nil, parts.fragment == nil,
-              parts.percentEncodedPath == "/api/delivery/\(orgId)/\(appId)/manifest", parts.url != nil else {
+              parts.percentEncodedPath == environmentPath || (environment == "production" && parts.percentEncodedPath == "\(deliveryPath)/manifest"),
+              parts.url != nil else {
             throw AssetLibError.invalid("An HTTPS manifest URL scoped to this app is required.")
         }
     }
@@ -83,8 +94,9 @@ struct ManifestPayload: Codable, Sendable {
     let createdAt: String
     let slots: [ManifestSlot]
     let renditionSchemaVersion: Int?
+    let variantSchemaVersion: Int?
 
-    enum CodingKeys: String, CodingKey { case schemaVersion, orgId, appId, environment, sequence, createdAt, slots, renditionSchemaVersion }
+    enum CodingKeys: String, CodingKey { case schemaVersion, orgId, appId, environment, sequence, createdAt, slots, renditionSchemaVersion, variantSchemaVersion }
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         schemaVersion = try c.decode(Int.self, forKey: .schemaVersion)
@@ -96,6 +108,7 @@ struct ManifestPayload: Codable, Sendable {
         slots = try c.decode([ManifestSlot].self, forKey: .slots)
         // Null is not absence: malformed extensions must fail closed.
         renditionSchemaVersion = c.contains(.renditionSchemaVersion) ? try c.decode(Int.self, forKey: .renditionSchemaVersion) : nil
+        variantSchemaVersion = c.contains(.variantSchemaVersion) ? try c.decode(Int.self, forKey: .variantSchemaVersion) : nil
     }
 }
 
@@ -110,8 +123,11 @@ struct ManifestSlot: Codable, Sendable {
     let mime: String
     let bytes: Int
     let renditions: [ManifestRendition]?
+    let accessibility: AssetAccessibility?
+    let variants: ManifestVariants?
+    let cells: [ManifestCell]?
 
-    enum CodingKeys: String, CodingKey { case key, screen, width, height, assetId, sha256, url, mime, bytes, renditions }
+    enum CodingKeys: String, CodingKey { case key, screen, width, height, assetId, sha256, url, mime, bytes, renditions, accessibility, variants, cells }
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         key = try c.decode(String.self, forKey: .key)
@@ -124,6 +140,68 @@ struct ManifestSlot: Codable, Sendable {
         mime = try c.decode(String.self, forKey: .mime)
         bytes = try c.decode(Int.self, forKey: .bytes)
         renditions = c.contains(.renditions) ? try c.decode([ManifestRendition].self, forKey: .renditions) : nil
+        accessibility = c.contains(.accessibility) ? try c.decode(AssetAccessibility.self, forKey: .accessibility) : nil
+        variants = c.contains(.variants) ? try c.decode(ManifestVariants.self, forKey: .variants) : nil
+        cells = c.contains(.cells) ? try c.decode([ManifestCell].self, forKey: .cells) : nil
+    }
+
+    /// Project a selected cell onto its placement so image validation and rendition selection stay shared.
+    func selecting(_ cell: ManifestCell) -> ManifestSlot { ManifestSlot(placement: self, cell: cell) }
+
+    private init(placement: ManifestSlot, cell: ManifestCell) {
+        key = placement.key; screen = placement.screen; width = placement.width; height = placement.height
+        assetId = cell.assetId; sha256 = cell.sha256; url = cell.url; mime = cell.mime; bytes = cell.bytes
+        renditions = cell.renditions; accessibility = cell.accessibility
+        variants = nil; cells = nil
+    }
+}
+
+struct ManifestVariants: Codable, Sendable {
+    let appearance: [AssetAppearance]?
+    let arm: [String]?
+
+    enum CodingKeys: String, CodingKey { case appearance, arm }
+    private struct AxisKey: CodingKey {
+        let stringValue: String
+        var intValue: Int? { nil }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { return nil }
+    }
+    init(from decoder: any Decoder) throws {
+        let axes = try decoder.container(keyedBy: AxisKey.self)
+        guard axes.allKeys.allSatisfy({ CodingKeys(rawValue: $0.stringValue) != nil }) else {
+            throw AssetLibError.invalid("Unsupported variant axis.")
+        }
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        appearance = c.contains(.appearance) ? try c.decode([AssetAppearance].self, forKey: .appearance) : nil
+        arm = c.contains(.arm) ? try c.decode([String].self, forKey: .arm) : nil
+    }
+}
+
+struct ManifestCell: Codable, Sendable {
+    let appearance: AssetAppearance?
+    let arm: String?
+    let assetId: String
+    let sha256: String
+    let url: String
+    let mime: String
+    let bytes: Int
+    let renditions: [ManifestRendition]?
+    let accessibility: AssetAccessibility?
+
+    // Native clients deliberately ignore states, defaultState, and other unknown keys.
+    enum CodingKeys: String, CodingKey { case appearance, arm, assetId, sha256, url, mime, bytes, renditions, accessibility }
+    init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        appearance = c.contains(.appearance) ? try c.decode(AssetAppearance.self, forKey: .appearance) : nil
+        arm = c.contains(.arm) ? try c.decode(String.self, forKey: .arm) : nil
+        assetId = try c.decode(String.self, forKey: .assetId)
+        sha256 = try c.decode(String.self, forKey: .sha256)
+        url = try c.decode(String.self, forKey: .url)
+        mime = try c.decode(String.self, forKey: .mime)
+        bytes = try c.decode(Int.self, forKey: .bytes)
+        renditions = c.contains(.renditions) ? try c.decode([ManifestRendition].self, forKey: .renditions) : nil
+        accessibility = c.contains(.accessibility) ? try c.decode(AssetAccessibility.self, forKey: .accessibility) : nil
     }
 }
 
@@ -171,6 +249,13 @@ public struct ResolvedAsset: Sendable {
     public let assetID: String?
     public let mime: String?
     public let pixelSize: AssetPixelSize?
+    /// Describes these bytes from this release; never borrowed from a newer release or the bundle.
+    public let accessibility: AssetAccessibility?
+    /// The selected cell's appearance, or nil for appearance-independent artwork.
+    public let appearance: AssetAppearance?
+    /// The selected cell's arm, or nil for control artwork.
+    public let arm: String?
+    public let armSource: AssetArmSource
 }
 
 public struct RefreshResult: Sendable {
