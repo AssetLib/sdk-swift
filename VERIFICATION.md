@@ -1,6 +1,6 @@
-# 0.3.1-preview.1 preparation — 2026-10-09
+# 0.3.1-preview.1 — October 9, 2026
 
-Uncommitted source validation on macOS. No tag, push, or publication.
+Released as tag `0.3.1-preview.1` on October 9, 2026 after GitHub Actions passed for the release commit. The final gates were rerun with plain `swift test`, `python3 scripts/test_codegen.py` and `swift build -c release` (no cache workaround): 52 tests across 5 suites, 4 codegen tests, and a release build passed. The notes below record the preparation run.
 
 - Before the parser change, both new tests failed with `DecodingError.keyNotFound` for `pinnedPublicKey` in set-only configurations.
 - A focused serialization regression reproduced an accepted 4096-byte set-only configuration expanding to 4308 bytes and then failing to parse. The custom encoder fixed it while preserving an explicit non-first single pin; both focused tests then passed.
