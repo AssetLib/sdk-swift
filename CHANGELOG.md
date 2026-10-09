@@ -7,7 +7,7 @@
 - Rejects explicit nulls in known configuration fields, `keyId` without an explicit single pin, and `keyIds` whose values, count, or order differ from the derived IDs. Duplicate pins, empty or oversized sets, invalid Ed25519 SPKI PEM, pins over 256 UTF-8 bytes, and JSON over 4096 bytes remain rejected. Unknown fields count toward the JSON byte limit.
 - Runs the generated shared public-configuration corpus, including signature checks for the second trusted key and an untrusted key.
 
-Validation: On 2026-10-09, 51 Swift test functions passed on macOS and 1 optional hosted test was skipped (52 total across 5 suites, as Swift Testing reports). This includes 43 shared public-configuration cases, 39 associated signature expectations, and 100 existing signed manifest cases. All 4 code-generation tests and the release build passed. Swift commands used the documented temporary-cache sandbox workaround. No tag or release was published.
+Validation: on October 9, 2026, `swift test` passed 52 tests across 5 suites on macOS (the optional hosted test skips without a configuration), including 43 shared public-configuration cases, 39 associated signature expectations, and the 100 existing signed manifest cases. All 4 code-generation tests and `swift build -c release` passed. No iOS simulator or device run is claimed.
 
 ## 0.3.0-preview.1
 
