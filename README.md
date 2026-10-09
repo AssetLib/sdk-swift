@@ -16,10 +16,10 @@ artwork.travel.coast
 
 ## Install
 
-Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.2.1-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
+Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.3.0-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
 
 ```swift
-.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.2.1-preview.1")
+.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.3.0-preview.1")
 ```
 
 The runnable [SwiftUI travel demo](https://github.com/AssetLib/demo-ios) includes bundled illustrations, generated accessors, and a connection sheet. It works before you create an account.
