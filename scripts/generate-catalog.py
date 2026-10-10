@@ -60,6 +60,8 @@ def generate(catalog):
             raise ValueError("Invalid fallback image name")
         if "bundledAccessibility" in item:
             accessibility(item["bundledAccessibility"])
+        if item.get("rendering", "original") not in ("original", "template"):
+            raise ValueError(f'Invalid rendering for {item["key"]}: use "original" or "template"')
         seen.add(pair)
         keys.add(item["key"])
         groups.setdefault(group, []).append(item)
@@ -73,7 +75,8 @@ def generate(catalog):
         lines.append(f"    enum `{group}` {{")
         for item in items:
             member = item["symbol"][1]
-            lines.append(f'        static let `{member}` = AssetReference(key: "{item["key"]}", width: {item["width"]}, height: {item["height"]})')
+            rendering = ", rendering: .template" if item.get("rendering") == "template" else ""
+            lines.append(f'        static let `{member}` = AssetReference(key: "{item["key"]}", width: {item["width"]}, height: {item["height"]}{rendering})')
             refs.append(f"`{group}`.`{member}`")
         lines.append("    }")
     lines += [f"    static let all: [AssetReference] = [{', '.join(refs)}]", "}", "", "@MainActor struct AppArtwork {", "    let store: AssetImageStore", "    var bundle: Bundle = .main"]

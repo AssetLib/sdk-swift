@@ -57,5 +57,19 @@ class CodeGenerationTests(unittest.TestCase):
             with self.subTest(dependency=dependency), self.assertRaises(ValueError):
                 generator.generate(value)
 
+    def test_template_rendering_reaches_only_template_references(self):
+        original = generator.generate(self.catalog)
+        value = deepcopy(self.catalog); value["placements"][0]["rendering"] = "original"
+        self.assertEqual(generator.generate(value), original)
+        value["placements"][0]["rendering"] = "template"
+        source = generator.generate(value)
+        self.assertIn('AssetReference(key: "travel.coast", width: 1200, height: 900, rendering: .template)', source)
+        self.assertIn('AssetReference(key: "travel.ridge", width: 1200, height: 900)\n', source)
+        self.assertEqual(source.count("rendering:"), 1)
+        for rendering in ["Template", "palette", "", None, True]:
+            value["placements"][0]["rendering"] = rendering
+            with self.subTest(rendering=rendering), self.assertRaisesRegex(ValueError, "rendering"):
+                generator.generate(value)
+
 if __name__ == "__main__":
     unittest.main()
