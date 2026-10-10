@@ -58,15 +58,25 @@ class CodeGenerationTests(unittest.TestCase):
                 generator.generate(value)
 
     def test_fallback_names_allow_asset_catalog_namespaces_and_spaces(self):
-        for name in ["illustration/home-hero", "Promo/Summer 2026/hero banner", "a", "x" * 120]:
+        for name in ["illustration/home-hero", "Tier 1 BG", "Promo/Summer 2026/hero banner", "icons/v1.2/close", "_shared/a", "a", "x" * 120]:
             value = deepcopy(self.catalog); value["placements"][0]["fallbackImageName"] = name
             with self.subTest(name=name):
                 self.assertIn(f'Image(decorative: "{name}", bundle: bundle)', generator.generate(value))
         for name in ["", "/coast", "coast/", "a//b", " coast", "coast ", "a  b", "a /b", "a/ b", "a\tb", "a\nb",
-                     'a"b', "a\\b", "a\\(b)", "café", "x" * 121, None, 7]:
+                     'a"b', "a\\b", "a\\(b)", "café", "x" * 121, None, 7,
+                     ".", "..", "../x", "a/../b", "./x", "a/./b", ".hidden/x", ".hidden", "a/.b"]:
             value = deepcopy(self.catalog); value["placements"][0]["fallbackImageName"] = name
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, "fallback"):
                 generator.generate(value)
+
+    def test_escaped_literals_keep_valid_catalogs_byte_identical(self):
+        self.assertEqual(generator.generate(self.catalog), (ROOT / "Examples/Artwork.generated.swift").read_text())
+        value = deepcopy(self.catalog)
+        value["placements"][0].update(key="travel.coast_v2-hero", fallbackImageName="Promo/Tier 1 BG")
+        source = generator.generate(value)
+        self.assertIn('AssetReference(key: "travel.coast_v2-hero", width: 1200, height: 900)', source)
+        self.assertEqual(source.count('Image(decorative: "Promo/Tier 1 BG", bundle: bundle)'), 2)
+        self.assertEqual(generator.swift_string('a"b\\(c)\n'), '"a\\"b\\\\(c)\\u{a}"')
 
     def test_template_rendering_reaches_only_template_references(self):
         original = generator.generate(self.catalog)

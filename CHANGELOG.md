@@ -3,8 +3,10 @@
 ## Unreleased
 
 - Fixes the catalog generator rejecting valid `fallbackImageName` values. It now accepts `/` between the folder and image names that Xcode uses for asset-catalog folders with "Provides Namespace" (`illustration/home-hero`, as `Image(_:bundle:)` expects), and single spaces inside a name. Leading or trailing `/` or spaces, empty segments, repeated spaces, quotes, backslashes, control and non-ASCII characters, and names over 120 characters are still rejected. Catalogs that were already valid generate byte-identical output.
+- Rejects any `fallbackImageName` segment that starts with `.`, so `../x`, `a/../b`, `./x` and `a/./b` cannot reach `Image(decorative:bundle:)`, whose lookup outside an asset catalog resolves bundle-relative paths. This also tightens the previous rule: a single-segment name starting with `.` (such as `.hidden` or `..`) was accepted before and is now an error. Asset-catalog names never start with `.`.
+- Writes placement keys and fallback image names through the same Swift string escaping as descriptions, so the generated literals stay safe even if validation changes. Every valid catalog generates byte-identical output.
 
-Validation: on October 10, 2026, all 6 code-generation tests, `swift test` (57 tests in 6 suites, the optional hosted test skipped) and `swift build -c release` passed on macOS.
+Validation: on October 10, 2026, all 7 code-generation tests, `swift test` (57 tests in 6 suites, the optional hosted test skipped) and `swift build -c release` passed on macOS. The checked-in example catalog and an extended catalog with namespaced and spaced names generate the same bytes as the generator before these changes.
 
 ## 0.4.0-preview.1
 

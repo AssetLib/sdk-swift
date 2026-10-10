@@ -57,7 +57,8 @@ def generate(catalog):
                 raise ValueError("Invalid placement dimensions")
         fallback = item["fallbackImageName"]
         # Asset-catalog names: "/" separates "Provides Namespace" folders; single spaces only inside a segment.
-        segment = r"[A-Za-z0-9_.-]+(?: [A-Za-z0-9_.-]+)*"
+        # No segment starts with ".", so "." and ".." can never resolve outside the bundle.
+        segment = r"[A-Za-z0-9_-][A-Za-z0-9_.-]*(?: [A-Za-z0-9_.-]+)*"
         if not isinstance(fallback, str) or len(fallback) > 120 or not re.fullmatch(f"{segment}(?:/{segment})*", fallback):
             raise ValueError("Invalid fallback image name")
         if "bundledAccessibility" in item:
@@ -78,7 +79,7 @@ def generate(catalog):
         for item in items:
             member = item["symbol"][1]
             rendering = ", rendering: .template" if item.get("rendering") == "template" else ""
-            lines.append(f'        static let `{member}` = AssetReference(key: "{item["key"]}", width: {item["width"]}, height: {item["height"]}{rendering})')
+            lines.append(f'        static let `{member}` = AssetReference(key: {swift_string(item["key"])}, width: {item["width"]}, height: {item["height"]}{rendering})')
             refs.append(f"`{group}`.`{member}`")
         lines.append("    }")
     lines += [f"    static let all: [AssetReference] = [{', '.join(refs)}]", "}", "", "@MainActor struct AppArtwork {", "    let store: AssetImageStore", "    var bundle: Bundle = .main"]
@@ -87,7 +88,7 @@ def generate(catalog):
         lines += [f"    var `{accessor}`: `{group}` {{ `{group}`(store: store, bundle: bundle) }}", f"    @MainActor struct `{group}` {{", "        let store: AssetImageStore", "        let bundle: Bundle"]
         for item in items:
             member = item["symbol"][1]
-            fallback = f'Image(decorative: "{item["fallbackImageName"]}", bundle: bundle)'
+            fallback = f'Image(decorative: {swift_string(item["fallbackImageName"])}, bundle: bundle)'
             metadata = accessibility(item["bundledAccessibility"]) if "bundledAccessibility" in item else "nil"
             lines.append(f'        var `{member}`: Image {{ store.image(for: AssetCatalog.`{group}`.`{member}`, fallback: {fallback}) }}')
             lines += [f'        func `{member}Artwork`(locale: Locale = .current, requireDescription: Bool = false) -> AssetArtwork {{',
