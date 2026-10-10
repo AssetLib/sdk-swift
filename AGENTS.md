@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Assetlib for Swift: the public, MIT-licensed SwiftPM package (product `AssetLib`) that verifies signed artwork releases, keeps a verified local cache, and returns ordinary SwiftUI `Image` values with the app's bundled fallbacks. iOS 17+ / macOS 14+, Swift 6 language mode, no third-party runtime dependencies. Apps pin it by exact git tag; manifests are signed by the hosted console (https://console.assetlib.dev). Developer preview; latest release `0.3.1-preview.1` (October 9, 2026). The Kotlin SDK (AssetLib/sdk-android) and the JavaScript SDK (AssetLib/sdk-js) implement the same contract.
+Assetlib for Swift: the public, MIT-licensed SwiftPM package (product `AssetLib`) that verifies signed artwork releases, keeps a verified local cache, and returns ordinary SwiftUI `Image` values with the app's bundled fallbacks. iOS 17+ / macOS 14+, Swift 6 language mode, no third-party runtime dependencies. Apps pin it by exact git tag; manifests are signed by the hosted console (https://console.assetlib.dev). Developer preview; latest release `0.4.0-preview.1` (October 10, 2026). The Kotlin SDK (AssetLib/sdk-android) and the JavaScript SDK (AssetLib/sdk-js) implement the same contract.
 
 ## Commands
 

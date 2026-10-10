@@ -1,6 +1,6 @@
-# Tintable icons (unreleased) — October 9, 2026
+# 0.4.0-preview.1 (tintable icons) — October 10, 2026
 
-Branch `feat/tintable-icons`, not tagged or released. Plain commands on macOS, no cache workaround:
+Released as tag `0.4.0-preview.1` after GitHub Actions passed for the release commit. Checks run on the `feat/tintable-icons` branch before the merge. Plain commands on macOS, no cache workaround:
 
 - `swift test`: `Test run with 57 tests in 6 suites passed` (56 passed, the optional hosted test skipped). The suite loads all 115 signed manifest cases, including 5 accepted and 10 rejected rendering manifests, and the 10 cases in `rendering.json`; every bundled case is asserted to make no asset body request.
 - Template rendering is checked by rendering store images with `ImageRenderer` under an opaque red `foregroundStyle`: remote and bundled images for a template reference come out red, and original references keep their pixels.

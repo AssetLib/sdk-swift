@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0-preview.1
 
 - Adds tintable icons. `AssetRendering` (`.original`, `.template`) and `AssetReference(key:width:height:rendering:)`, defaulting to `.original`, so existing references and generated code compile unchanged. `AssetReference` Codable reads values without `rendering` as original and omits it when original.
 - Decodes the optional signed `rendering` field on slots and variant cells. Null, non-string, or values not matching `^[a-z][a-z0-9-]{0,31}$` reject the manifest; a well-formed unknown value is kept.
@@ -8,6 +8,8 @@
 - For a `.template` reference, `AssetImageStore.image(for:fallback:)` and `artwork(for:…)` apply `.renderingMode(.template)` to both remote and bundled images.
 - The catalog generator accepts `"rendering": "original" | "template"` and emits `rendering: .template` only for template placements; other catalogs generate byte-identical output. Any other value is an error.
 - Vendors the shared corpus with 15 new signed rendering manifests and 10 rendering resolution cases.
+
+Validation: on October 9, 2026, `swift test` passed 57 tests across 6 suites on macOS (56 passed, the optional hosted test skipped), including all 115 signed manifest cases and the 10 rendering resolution cases, with no download on any mismatch. Template rendering of remote and bundled images was checked with `ImageRenderer`. All 5 code-generation tests and `swift build -c release` passed. No iOS simulator or device run is claimed.
 
 ## 0.3.1-preview.1
 

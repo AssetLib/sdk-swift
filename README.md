@@ -16,10 +16,10 @@ artwork.travel.coast
 
 ## Install
 
-Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.3.1-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
+Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.4.0-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
 
 ```swift
-.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.3.1-preview.1")
+.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.4.0-preview.1")
 ```
 
 The runnable [SwiftUI travel demo](https://github.com/AssetLib/demo-ios) includes bundled illustrations, generated accessors, and a connection sheet. It works before you create an account.
@@ -174,7 +174,7 @@ An existing placement can receive new compatible artwork without rebuilding the 
 
 ## Tintable icons
 
-Not in `0.3.1-preview.1`; this section describes unreleased work on `main`.
+Since `0.4.0-preview.1`.
 
 A catalog placement can declare `"rendering": "template"` (the default is `"original"`). Assetlib then delivers the icon as an alpha mask, and the generator emits `AssetReference(key:width:height:rendering: .template)`. For a template reference, `image(for:fallback:)` and the image inside `artwork(for:…)` already apply `.renderingMode(.template)` to both the remote and the bundled image, so the app supplies the color:
 
