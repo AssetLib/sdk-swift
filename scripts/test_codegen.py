@@ -57,6 +57,17 @@ class CodeGenerationTests(unittest.TestCase):
             with self.subTest(dependency=dependency), self.assertRaises(ValueError):
                 generator.generate(value)
 
+    def test_fallback_names_allow_asset_catalog_namespaces_and_spaces(self):
+        for name in ["illustration/home-hero", "Promo/Summer 2026/hero banner", "a", "x" * 120]:
+            value = deepcopy(self.catalog); value["placements"][0]["fallbackImageName"] = name
+            with self.subTest(name=name):
+                self.assertIn(f'Image(decorative: "{name}", bundle: bundle)', generator.generate(value))
+        for name in ["", "/coast", "coast/", "a//b", " coast", "coast ", "a  b", "a /b", "a/ b", "a\tb", "a\nb",
+                     'a"b', "a\\b", "a\\(b)", "café", "x" * 121, None, 7]:
+            value = deepcopy(self.catalog); value["placements"][0]["fallbackImageName"] = name
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "fallback"):
+                generator.generate(value)
+
     def test_template_rendering_reaches_only_template_references(self):
         original = generator.generate(self.catalog)
         value = deepcopy(self.catalog); value["placements"][0]["rendering"] = "original"

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Fixes the catalog generator rejecting valid `fallbackImageName` values. It now accepts `/` between the folder and image names that Xcode uses for asset-catalog folders with "Provides Namespace" (`illustration/home-hero`, as `Image(_:bundle:)` expects), and single spaces inside a name. Leading or trailing `/` or spaces, empty segments, repeated spaces, quotes, backslashes, control and non-ASCII characters, and names over 120 characters are still rejected. Catalogs that were already valid generate byte-identical output.
+
+Validation: on October 10, 2026, all 6 code-generation tests, `swift test` (57 tests in 6 suites, the optional hosted test skipped) and `swift build -c release` passed on macOS.
+
 ## 0.4.0-preview.1
 
 - Adds tintable icons. `AssetRendering` (`.original`, `.template`) and `AssetReference(key:width:height:rendering:)`, defaulting to `.original`, so existing references and generated code compile unchanged. `AssetReference` Codable reads values without `rendering` as original and omits it when original.

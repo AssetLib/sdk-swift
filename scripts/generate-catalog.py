@@ -56,7 +56,9 @@ def generate(catalog):
             if type(item[axis]) is not int or not 1 <= item[axis] <= 8192:
                 raise ValueError("Invalid placement dimensions")
         fallback = item["fallbackImageName"]
-        if not re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", fallback):
+        # Asset-catalog names: "/" separates "Provides Namespace" folders; single spaces only inside a segment.
+        segment = r"[A-Za-z0-9_.-]+(?: [A-Za-z0-9_.-]+)*"
+        if not isinstance(fallback, str) or len(fallback) > 120 or not re.fullmatch(f"{segment}(?:/{segment})*", fallback):
             raise ValueError("Invalid fallback image name")
         if "bundledAccessibility" in item:
             accessibility(item["bundledAccessibility"])
