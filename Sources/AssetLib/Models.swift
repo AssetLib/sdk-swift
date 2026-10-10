@@ -15,11 +15,34 @@ public enum AssetLimits {
     public static let decodedPixels = 16_777_216
 }
 
+/// How a placement's artwork is drawn. `.template` placements deliver an alpha mask that the app tints.
+public enum AssetRendering: String, Codable, Sendable, Hashable { case original, template }
+
 public struct AssetReference: Hashable, Codable, Sendable {
     public let key: String
     public let width: Int
     public let height: Int
-    public init(key: String, width: Int, height: Int) { self.key = key; self.width = width; self.height = height }
+    /// Part of the placement contract: only descriptors with the same rendering are used.
+    public let rendering: AssetRendering
+    public init(key: String, width: Int, height: Int, rendering: AssetRendering = .original) {
+        self.key = key; self.width = width; self.height = height; self.rendering = rendering
+    }
+
+    enum CodingKeys: String, CodingKey { case key, width, height, rendering }
+    // Values encoded before `rendering` existed decode as original, and original values encode as before.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        try self.init(key: c.decode(String.self, forKey: .key), width: c.decode(Int.self, forKey: .width),
+                      height: c.decode(Int.self, forKey: .height),
+                      rendering: c.decodeIfPresent(AssetRendering.self, forKey: .rendering) ?? .original)
+    }
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(key, forKey: .key)
+        try c.encode(width, forKey: .width)
+        try c.encode(height, forKey: .height)
+        if rendering != .original { try c.encode(rendering, forKey: .rendering) }
+    }
 }
 
 /// Physical pixels requested by the caller; layout modifiers do not change this value.
@@ -203,8 +226,10 @@ struct ManifestSlot: Codable, Sendable {
     let accessibility: AssetAccessibility?
     let variants: ManifestVariants?
     let cells: [ManifestCell]?
+    /// Absent means original. A well-formed unknown value makes only this descriptor incompatible.
+    let rendering: String?
 
-    enum CodingKeys: String, CodingKey { case key, screen, width, height, assetId, sha256, url, mime, bytes, renditions, accessibility, variants, cells }
+    enum CodingKeys: String, CodingKey { case key, screen, width, height, assetId, sha256, url, mime, bytes, renditions, accessibility, variants, cells, rendering }
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         key = try c.decode(String.self, forKey: .key)
@@ -220,6 +245,7 @@ struct ManifestSlot: Codable, Sendable {
         accessibility = c.contains(.accessibility) ? try c.decode(AssetAccessibility.self, forKey: .accessibility) : nil
         variants = c.contains(.variants) ? try c.decode(ManifestVariants.self, forKey: .variants) : nil
         cells = c.contains(.cells) ? try c.decode([ManifestCell].self, forKey: .cells) : nil
+        rendering = c.contains(.rendering) ? try c.decode(String.self, forKey: .rendering) : nil
     }
 
     /// Project a selected cell onto its placement so image validation and rendition selection stay shared.
@@ -228,7 +254,7 @@ struct ManifestSlot: Codable, Sendable {
     private init(placement: ManifestSlot, cell: ManifestCell) {
         key = placement.key; screen = placement.screen; width = placement.width; height = placement.height
         assetId = cell.assetId; sha256 = cell.sha256; url = cell.url; mime = cell.mime; bytes = cell.bytes
-        renditions = cell.renditions; accessibility = cell.accessibility
+        renditions = cell.renditions; accessibility = cell.accessibility; rendering = cell.rendering
         variants = nil; cells = nil
     }
 }
@@ -265,9 +291,10 @@ struct ManifestCell: Codable, Sendable {
     let bytes: Int
     let renditions: [ManifestRendition]?
     let accessibility: AssetAccessibility?
+    let rendering: String?
 
     // Native clients deliberately ignore states, defaultState, and other unknown keys.
-    enum CodingKeys: String, CodingKey { case appearance, arm, assetId, sha256, url, mime, bytes, renditions, accessibility }
+    enum CodingKeys: String, CodingKey { case appearance, arm, assetId, sha256, url, mime, bytes, renditions, accessibility, rendering }
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         appearance = c.contains(.appearance) ? try c.decode(AssetAppearance.self, forKey: .appearance) : nil
@@ -279,6 +306,7 @@ struct ManifestCell: Codable, Sendable {
         bytes = try c.decode(Int.self, forKey: .bytes)
         renditions = c.contains(.renditions) ? try c.decode([ManifestRendition].self, forKey: .renditions) : nil
         accessibility = c.contains(.accessibility) ? try c.decode(AssetAccessibility.self, forKey: .accessibility) : nil
+        rendering = c.contains(.rendering) ? try c.decode(String.self, forKey: .rendering) : nil
     }
 }
 

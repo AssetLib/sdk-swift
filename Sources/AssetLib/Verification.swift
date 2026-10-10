@@ -59,7 +59,8 @@ enum ManifestVerifier {
 
     private static func validateImage(_ slot: ManifestSlot, renditionSchemaVersion: Int?, config: AssetConfiguration) throws {
         guard matches(slot.assetId, uuidPattern), matches(slot.sha256, hashPattern),
-              slot.mime == "image/webp", (1...AssetLimits.assetBytes).contains(slot.bytes) else {
+              slot.mime == "image/webp", (1...AssetLimits.assetBytes).contains(slot.bytes),
+              slot.rendering.map({ matches($0, "^[a-z][a-z0-9-]{0,31}\\z") }) ?? true else {
             throw AssetLibError.invalid("Invalid or unsupported image descriptor in manifest.")
         }
         _ = try assetURL(slot, config: config)

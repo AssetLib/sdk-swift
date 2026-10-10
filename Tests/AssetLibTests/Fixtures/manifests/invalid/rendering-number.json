@@ -1,0 +1,7 @@
+{
+  "algorithm": "Ed25519",
+  "keyId": "f0ff50dacf109dea",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=\n-----END PUBLIC KEY-----\n",
+  "payload": "{\"schemaVersion\":1,\"orgId\":\"11111111-1111-4111-8111-111111111111\",\"appId\":\"22222222-2222-4222-8222-222222222222\",\"environment\":\"production\",\"sequence\":9,\"createdAt\":\"2026-10-07T12:08:00.000Z\",\"slots\":[{\"key\":\"travel.coast\",\"width\":1200,\"height\":900,\"screen\":\"Travel / Café 東京 🌿\",\"assetId\":\"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb\",\"sha256\":\"81baaf0d925b4ec2a9c1d0afb6379b9e9eb87692b9a4f6d580005c0cd9eccd10\",\"url\":\"/api/delivery/11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222/assets/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb\",\"mime\":\"image/webp\",\"bytes\":17604},{\"key\":\"icons.coast\",\"width\":40,\"height\":30,\"screen\":\"Tabs\",\"assetId\":\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\",\"sha256\":\"03fa6da42647d0dac7228a39bad28f5ea550ffcfef9a0872b5c685875e91a8fa\",\"url\":\"/api/delivery/11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222/assets/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\",\"mime\":\"image/webp\",\"bytes\":17334,\"rendering\":1}]}",
+  "signature": "6OTL4Ok02nz6Qw6EmhodvVuLnHQBtNPjuzi09ojQRbPsn2mUzWH804TmWzMs2biz5x2Epm3LW7zZkD27zatsAA=="
+}

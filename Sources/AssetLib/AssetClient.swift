@@ -139,6 +139,11 @@ public actor AssetClient {
                 guard let slot = payload.slots.first(where: { $0.key == reference.key && $0.width == reference.width && $0.height == reference.height }) else { continue }
                 let cell = selectedCell(in: slot, arm: decision.arm, appearance: appearance)
                 let selected = cell.map { slot.selecting($0) } ?? slot
+                // Like a size mismatch: a different or unknown rendering is never read from cache or downloaded.
+                guard (selected.rendering ?? AssetRendering.original.rawValue) == reference.rendering.rawValue else {
+                    message = "Published artwork for this placement uses a different rendering."
+                    continue
+                }
                 // Both cache lookups and downloads use the selected cell's descriptor and hashes.
                 for candidate in ManifestVerifier.candidates(selected, target: target, formats: supportedFormats) {
                     do {

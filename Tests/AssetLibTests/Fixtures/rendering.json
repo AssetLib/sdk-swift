@@ -1,0 +1,126 @@
+{
+  "rule": "Reference rendering (absent = original) must equal the selected descriptor rendering (absent = original); a mismatch or unknown value uses the bundled fallback without downloading.",
+  "cases": [
+    {
+      "manifest": "manifests/valid-rendering-template-seq9.json",
+      "ref": {
+        "key": "icons.coast",
+        "width": 40,
+        "height": 30,
+        "rendering": "template"
+      },
+      "request": {},
+      "expect": "remote",
+      "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    },
+    {
+      "manifest": "manifests/valid-rendering-template-seq9.json",
+      "ref": {
+        "key": "icons.coast",
+        "width": 40,
+        "height": 30
+      },
+      "request": {},
+      "expect": "bundled"
+    },
+    {
+      "manifest": "manifests/valid-rendering-template-seq9.json",
+      "ref": {
+        "key": "travel.coast",
+        "width": 1200,
+        "height": 900
+      },
+      "request": {},
+      "expect": "remote",
+      "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+    },
+    {
+      "manifest": "manifests/valid-rendering-template-seq9.json",
+      "ref": {
+        "key": "travel.coast",
+        "width": 1200,
+        "height": 900,
+        "rendering": "template"
+      },
+      "request": {},
+      "expect": "bundled"
+    },
+    {
+      "manifest": "manifests/valid-rendering-unknown-value-seq9.json",
+      "ref": {
+        "key": "icons.coast",
+        "width": 40,
+        "height": 30,
+        "rendering": "template"
+      },
+      "request": {},
+      "expect": "bundled"
+    },
+    {
+      "manifest": "manifests/valid-rendering-unknown-value-seq9.json",
+      "ref": {
+        "key": "travel.coast",
+        "width": 1200,
+        "height": 900
+      },
+      "request": {},
+      "expect": "remote",
+      "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+    },
+    {
+      "manifest": "manifests/valid-rendering-template-cells-seq10.json",
+      "ref": {
+        "key": "icons.coast",
+        "width": 40,
+        "height": 30,
+        "rendering": "template"
+      },
+      "request": {
+        "appearance": "dark"
+      },
+      "expect": "remote",
+      "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+    },
+    {
+      "manifest": "manifests/valid-rendering-template-cells-seq10.json",
+      "ref": {
+        "key": "icons.coast",
+        "width": 40,
+        "height": 30,
+        "rendering": "template"
+      },
+      "request": {
+        "appearance": "light"
+      },
+      "expect": "remote",
+      "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    },
+    {
+      "manifest": "manifests/valid-rendering-cell-mismatch-seq10.json",
+      "ref": {
+        "key": "icons.coast",
+        "width": 40,
+        "height": 30,
+        "rendering": "template"
+      },
+      "request": {
+        "appearance": "dark"
+      },
+      "expect": "bundled"
+    },
+    {
+      "manifest": "manifests/valid-rendering-cell-mismatch-seq10.json",
+      "ref": {
+        "key": "icons.coast",
+        "width": 40,
+        "height": 30,
+        "rendering": "template"
+      },
+      "request": {
+        "appearance": "light"
+      },
+      "expect": "remote",
+      "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    }
+  ]
+}

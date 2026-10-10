@@ -52,7 +52,8 @@ public final class AssetImageStore {
         images.removeAll(); results.removeAll()
         imageCosts.removeAll(); imageOrder.removeAll()
     }
-    public func image(for reference: AssetReference, fallback: Image) -> Image { images[reference] ?? fallback }
+    /// A `.template` reference returns its remote or bundled image with template rendering, ready for `foregroundStyle`.
+    public func image(for reference: AssetReference, fallback: Image) -> Image { rendered(images[reference] ?? fallback, for: reference) }
 
     /// Opt in to paired descriptions. Informative placements can keep their bundled image when a
     /// remote release has no description. The app still owns its label, hiding, and control traits.
@@ -61,9 +62,12 @@ public final class AssetImageStore {
                         requireDescription: Bool = false) -> AssetArtwork {
         if let image = images[reference], let result = results[reference],
            !requireDescription || result.accessibility != nil {
-            return AssetArtwork(image: image, accessibilityDescription: result.accessibility?.localizedDescription(locale: locale), source: result.source)
+            return AssetArtwork(image: rendered(image, for: reference), accessibilityDescription: result.accessibility?.localizedDescription(locale: locale), source: result.source)
         }
-        return AssetArtwork(image: fallback, accessibilityDescription: bundledAccessibility?.localizedDescription(locale: locale), source: .bundle)
+        return AssetArtwork(image: rendered(fallback, for: reference), accessibilityDescription: bundledAccessibility?.localizedDescription(locale: locale), source: .bundle)
+    }
+    private func rendered(_ image: Image, for reference: AssetReference) -> Image {
+        reference.rendering == .template ? image.renderingMode(.template) : image
     }
 
     /// Explicit lifecycle work; getters never start requests. A generation check blocks stale connection results.

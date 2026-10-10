@@ -604,6 +604,96 @@
       "verification": "reject",
       "reason": "At most four non-control arms may be declared. Re-signed with valid legacy image fields.",
       "config": "production"
+    },
+    {
+      "file": "manifests/valid-rendering-template-seq9.json",
+      "verification": "accept",
+      "reason": "A template icon placement beside an original placement; old clients ignore the field.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-rendering-unknown-value-seq9.json",
+      "verification": "accept",
+      "reason": "A well-formed rendering this client does not know only makes that placement incompatible.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-rendering-template-cells-seq10.json",
+      "verification": "accept",
+      "reason": "Variant cells carry their own rendering.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-rendering-cell-mismatch-seq10.json",
+      "verification": "accept",
+      "reason": "The rule applies to the selected descriptor: an original dark cell in a template placement is incompatible.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-rendering-template-states-seq10.json",
+      "verification": "accept",
+      "reason": "State members carry their own rendering.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/rendering-null.json",
+      "verification": "reject",
+      "reason": "Malformed rendering on a placement: null.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/rendering-number.json",
+      "verification": "reject",
+      "reason": "Malformed rendering on a placement: number.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/rendering-boolean.json",
+      "verification": "reject",
+      "reason": "Malformed rendering on a placement: boolean.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/rendering-array.json",
+      "verification": "reject",
+      "reason": "Malformed rendering on a placement: array.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/rendering-empty.json",
+      "verification": "reject",
+      "reason": "Malformed rendering on a placement: empty.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/rendering-uppercase.json",
+      "verification": "reject",
+      "reason": "Malformed rendering on a placement: uppercase.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/rendering-leading-digit.json",
+      "verification": "reject",
+      "reason": "Malformed rendering on a placement: leading-digit.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/rendering-whitespace.json",
+      "verification": "reject",
+      "reason": "Malformed rendering on a placement: whitespace.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/rendering-too-long.json",
+      "verification": "reject",
+      "reason": "Malformed rendering on a placement: too-long.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/rendering-cell-null.json",
+      "verification": "reject",
+      "reason": "Malformed rendering on a variant cell.",
+      "config": "production"
     }
   ],
   "configs": {
