@@ -1,3 +1,16 @@
+# Tintable icons (unreleased) — October 9, 2026
+
+Branch `feat/tintable-icons`, not tagged or released. Plain commands on macOS, no cache workaround:
+
+- `swift test`: `Test run with 57 tests in 6 suites passed` (56 passed, the optional hosted test skipped). The suite loads all 115 signed manifest cases, including 5 accepted and 10 rejected rendering manifests, and the 10 cases in `rendering.json`; every bundled case is asserted to make no asset body request.
+- Template rendering is checked by rendering store images with `ImageRenderer` under an opaque red `foregroundStyle`: remote and bundled images for a template reference come out red, and original references keep their pixels.
+- With the resolution rule and the template modifier temporarily removed, `swift test --filter RenderingTests` failed 4 of 5 tests with 18 issues; restored afterwards.
+- `python3 scripts/test_codegen.py`: `Ran 5 tests`, `OK`. `Examples/catalog.json` is unchanged, so `Examples/Artwork.generated.swift` is unchanged.
+- `swift build -c release`: `Build complete!`, including `AssetLibExample`.
+- `node check-copy.mjs Tests/AssetLibTests/Fixtures` from the shared corpus: `196/196 files (plus its own README.txt)`.
+
+No simulator, device, or hosted acceptance was run.
+
 # 0.3.1-preview.1 — October 9, 2026
 
 Released as tag `0.3.1-preview.1` on October 9, 2026 after GitHub Actions passed for the release commit. The final gates were rerun with plain `swift test`, `python3 scripts/test_codegen.py` and `swift build -c release` (no cache workaround): 52 tests across 5 suites, 4 codegen tests, and a release build passed. The notes below record the preparation run.

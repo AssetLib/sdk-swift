@@ -12,7 +12,7 @@ python3 scripts/test_codegen.py   # generator tests, including "Examples/Artwork
 swift build -c release            # also compiles Examples/ through the AssetLibExample target
 ```
 
-- Focused run: `swift test --filter VariantTests`. Suites: `ProtocolTests`, `RenditionTests`, `VariantTests`, `StorageIdentityTests`, `HostedAcceptance`.
+- Focused run: `swift test --filter VariantTests`. Suites: `ProtocolTests`, `RenditionTests`, `VariantTests`, `RenderingTests`, `StorageIdentityTests`, `HostedAcceptance`.
 - Optional read-only hosted check: `ASSETLIB_PUBLIC_CONFIG_FILE=/absolute/path/to/public-config.json swift test --filter HostedAcceptance`. Keep that file outside the repo; never commit or print it.
 - After changing the generator or `Examples/catalog.json`: `python3 scripts/generate-catalog.py Examples/catalog.json Examples/Artwork.generated.swift`.
 - If a sandbox blocks the default Clang module cache, `swift build` fails before compiling. VERIFICATION.md records the workaround (writable `CLANG_MODULE_CACHE_PATH` and `SWIFTPM_MODULECACHE_OVERRIDE`, plus `--disable-sandbox`). Do not edit `Package.swift` to get around it.
@@ -32,7 +32,7 @@ swift build -c release            # also compiles Examples/ through the AssetLib
 
 ## Shared contract corpus
 
-- `Tests/AssetLibTests/Fixtures/` is a byte-for-byte copy of the signed interoperability corpus that the Kotlin SDK vendors at `sdk/src/test/resources/fixtures/` and that is also run against the JavaScript SDK where the corpus is generated: 100 signed manifest cases (`cases.json` is the index, each case names its `production` or `staging` config), 18 variant resolution entries, 6 stateful cases, 2 byte-failure cases, and 4 rendition selections (`renditions.json`). `README.txt` is the only local file.
+- `Tests/AssetLibTests/Fixtures/` is a byte-for-byte copy of the signed interoperability corpus that the Kotlin SDK vendors at `sdk/src/test/resources/fixtures/` and that is also run against the JavaScript SDK where the corpus is generated: 115 signed manifest cases (`cases.json` is the index, each case names its `production` or `staging` config), 18 variant resolution entries, 6 stateful cases, 2 byte-failure cases, 4 rendition selections (`renditions.json`), and 10 rendering resolution cases (`rendering.json`). `README.txt` is the only local file.
 - The corpus is generated outside this repo. Never hand-edit, re-sign, or reformat a fixture: signatures cover exact payload bytes, and outer JSON whitespace differs from the signed payload on purpose. A contract change lands in the corpus first; then replace the whole directory (keep `README.txt`) here and in sdk-android in the same pass.
 - No CI step checks the copy against its source. A `diff -r` against the Kotlin repo's fixture directory should show only `README.txt`.
 - `keys/TEST_ONLY_*` is deliberately public test material. Never trust it outside tests.
@@ -48,6 +48,7 @@ swift build -c release            # also compiles Examples/ through the AssetLib
 - **Storage namespace** is SHA-256 of origin, org, app, and environment (`AssetConfiguration.storageNamespace`). Staging and production stay isolated. Changing the formula strands replay floors and caches; it requires a verified one-time migration like `legacyStorageNamespaces` plus the `namespace-v2` marker, with `StorageIdentityTests` extended.
 - **Cache and offline restart.** Cached bytes are re-verified on read. Only the latest accepted release may download; older retained releases are cache-only fallbacks.
 - **Renditions.** Smallest raster meeting the target, else largest; ties by byte length, then hash; the legacy WebP slot is always the last candidate. `supportedFormats` must include `.webP`. SVG metadata is validated, never fetched.
+- **Rendering.** A reference's rendering must equal the selected descriptor's (absent means original). A mismatched or unknown descriptor is skipped like a size mismatch, on every retained release: no cache read or download from it. Malformed values reject the manifest; well-formed unknown values affect only their placement.
 - **Variants.** Resolution order: (arm, appearance), (arm, any), (control, appearance), legacy slot. Never borrow another arm's artwork. Native clients ignore `states`.
 - **Decision callback.** Runs only when no explicit `arm` is passed and the current slot declares arms, and always outside the operation gate (never hold `acquire()` across it). Default wait 1,500 ms, allowed 100...10,000. Timeout, throw, nil, or an undeclared arm resolves control with `.invalidDecision` and a reason in `message`. Afterwards the client reloads durable state and re-checks the arm against the current release. `VariantTests` covers reentry, stalls, cancellation, and races.
 - **Limits** in `AssetLimits` and README "Delivery and failure behavior" are contract values. Change them only together with the corpus.
@@ -55,7 +56,7 @@ swift build -c release            # also compiles Examples/ through the AssetLib
 
 ## Public API and compatibility
 
-- Public surface: `AssetClient`, `AssetConfiguration`, `AssetImageStore`, `AssetArtwork`, `AssetReference`, `AssetPixelSize`, `AssetFormat`, `AssetAppearance`, `AssetArmSource`, `AssetAccessibility`, `ResolvedAsset`, `RefreshResult`, `AssetSource`, `AssetLimits`, `AssetLibError`, the `AssetStorage` and `AssetTransport` protocols, `FileAssetStorage`, `HTTPSAssetTransport`, `hashBytes`.
+- Public surface: `AssetClient`, `AssetConfiguration`, `AssetImageStore`, `AssetArtwork`, `AssetReference`, `AssetRendering`, `AssetPixelSize`, `AssetFormat`, `AssetAppearance`, `AssetArmSource`, `AssetAccessibility`, `ResolvedAsset`, `RefreshResult`, `AssetSource`, `AssetLimits`, `AssetLibError`, the `AssetStorage` and `AssetTransport` protocols, `FileAssetStorage`, `HTTPSAssetTransport`, `hashBytes`.
 - Apps commit generated code that calls `AssetReference(key:width:height:)`, `AssetImageStore.image(for:fallback:)`, `AssetImageStore.artwork(for:fallback:bundledAccessibility:locale:requireDescription:)`, and `AssetAccessibility(defaultLocale:descriptions:)`. Keep these source-compatible. The `AssetLibExample` target and `test_codegen.py` catch breaks.
 - Add parameters with defaults; do not remove or reorder existing ones. A new requirement on `AssetStorage` or `AssetTransport` breaks custom implementations; call it out in CHANGELOG.md.
 - Keep Swift 6 strict concurrency clean (`Sendable`, actor isolation, `@MainActor` store).

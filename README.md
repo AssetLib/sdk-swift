@@ -172,6 +172,24 @@ Commit the catalog and generated source. Generation uses no network or credentia
 
 An existing placement can receive new compatible artwork without rebuilding the app. Adding a Swift symbol or changing its layout contract requires a new build. Logical placement dimensions must match the signed manifest, while decoded pixels may differ at the same aspect ratio.
 
+## Tintable icons
+
+Not in `0.3.1-preview.1`; this section describes unreleased work on `main`.
+
+A catalog placement can declare `"rendering": "template"` (the default is `"original"`). Assetlib then delivers the icon as an alpha mask, and the generator emits `AssetReference(key:width:height:rendering: .template)`. For a template reference, `image(for:fallback:)` and the image inside `artwork(for:…)` already apply `.renderingMode(.template)` to both the remote and the bundled image, so the app supplies the color:
+
+```swift
+artwork.tab.trips
+    .resizable()
+    .frame(width: 24, height: 24)
+    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+```
+
+- Pass `targetPixels` as the logical size × `displayScale` (read `@Environment(\.displayScale)`): a 24-point icon on a 3× display requests `AssetPixelSize(width: 72, height: 72)`. Without a target the client requests 24×24 pixels, which looks soft on a 3× screen.
+- The bundled fallback must be a single-color shape, such as a PNG with alpha or an asset-catalog PDF. The same tint is applied to remote and bundled artwork, so switching between them is invisible.
+- Rendering is part of the placement contract, like width and height. A reference uses only signed descriptors with the same rendering, checked on the selected appearance or arm cell. A descriptor with a different rendering, or one this SDK does not know, is never read from the cache or downloaded; as with a size mismatch, the client uses an older retained release that matches, otherwise the bundled image. Other placements are unaffected.
+- Older SDK versions ignore the field and draw the mask untinted. Update the SDK before declaring a template placement.
+
 ## Delivery and failure behavior
 
 - Only pinned Ed25519 manifests for the configured organization, app, and environment (staging or production) are accepted. Signatures cover exact UTF-8 payload bytes; key IDs cover exact PEM bytes.
@@ -191,7 +209,7 @@ python3 scripts/test_codegen.py
 swift build -c release
 ```
 
-The committed test-only corpus contains signed interoperability cases shared with the JavaScript and Kotlin clients. Tests cover signatures, scope, malformed payloads, exact-byte equivocation, all 100 shared signed cases, 18 shared cell resolution scenarios, four shared rendition selection scenarios, real ImageIO PNG/WebP decoding, exact rendition dimensions, target-size ranking, candidate failure, cache migration, mismatched layouts, rollback, corrupted bytes, offline restart, concurrent storage clients, and corrupt durable state. Variant tests cover staging isolation, strict axes and cell validation, decisions, cell-specific cache and historical fallback, and store selection changes. Accessibility cases cover locale selection, malformed metadata, UTF-16 limits, paired historical descriptions, offline restart, missing remote descriptions, and native image snapshots with described bundled fallback.
+The committed test-only corpus contains signed interoperability cases shared with the JavaScript and Kotlin clients. Tests cover signatures, scope, malformed payloads, exact-byte equivocation, all 115 shared signed cases, 18 shared cell resolution scenarios, four shared rendition selection scenarios, 10 shared rendering resolution scenarios, real ImageIO PNG/WebP decoding, exact rendition dimensions, target-size ranking, candidate failure, cache migration, mismatched layouts, rollback, corrupted bytes, offline restart, concurrent storage clients, and corrupt durable state. Variant tests cover staging isolation, strict axes and cell validation, decisions, cell-specific cache and historical fallback, and store selection changes. Accessibility cases cover locale selection, malformed metadata, UTF-16 limits, paired historical descriptions, offline restart, missing remote descriptions, and native image snapshots with described bundled fallback. Rendering tests cover malformed and unknown values, historical and offline descriptors, the absence of downloads on a mismatch, and template rendering of remote and bundled images.
 
 An optional read-only hosted test takes a path to your public configuration outside the repository:
 

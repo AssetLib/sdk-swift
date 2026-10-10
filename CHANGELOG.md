@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Adds tintable icons. `AssetRendering` (`.original`, `.template`) and `AssetReference(key:width:height:rendering:)`, defaulting to `.original`, so existing references and generated code compile unchanged. `AssetReference` Codable reads values without `rendering` as original and omits it when original.
+- Decodes the optional signed `rendering` field on slots and variant cells. Null, non-string, or values not matching `^[a-z][a-z0-9-]{0,31}$` reject the manifest; a well-formed unknown value is kept.
+- A reference's rendering must equal the selected descriptor's (absent means original). Like a size mismatch, a mismatched or unknown descriptor is skipped without reading the cache or downloading, on the latest and on retained releases, so the result is matching older cached artwork or the bundled image. Other placements are unaffected.
+- For a `.template` reference, `AssetImageStore.image(for:fallback:)` and `artwork(for:…)` apply `.renderingMode(.template)` to both remote and bundled images.
+- The catalog generator accepts `"rendering": "original" | "template"` and emits `rendering: .template` only for template placements; other catalogs generate byte-identical output. Any other value is an error.
+- Vendors the shared corpus with 15 new signed rendering manifests and 10 rendering resolution cases.
+
 ## 0.3.1-preview.1
 
 - Accepts configurations containing only a pinned key set. The existing non-optional `pinnedPublicKey` property contains its first member; manifests signed by any member remain trusted.
