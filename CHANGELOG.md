@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0-preview.1 — October 11, 2026
 
 - Fixes the catalog generator rejecting valid `fallbackImageName` values. It now accepts `/` between the folder and image names that Xcode uses for asset-catalog folders with "Provides Namespace" (`illustration/home-hero`, as `Image(_:bundle:)` expects), and single spaces inside a name. Leading or trailing `/` or spaces, empty segments, repeated spaces, quotes, backslashes, control and non-ASCII characters, and names over 120 characters are still rejected. Catalogs that were already valid generate byte-identical output.
 - Rejects any `fallbackImageName` segment that starts with `.`, so `../x`, `a/../b`, `./x` and `a/./b` cannot reach `Image(decorative:bundle:)`, whose lookup outside an asset catalog resolves bundle-relative paths. This also tightens the previous rule: a single-segment name starting with `.` (such as `.hidden` or `..`) was accepted before and is now an error. Asset-catalog names never start with `.`.

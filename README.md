@@ -16,10 +16,10 @@ artwork.travel.coast
 
 ## Install
 
-Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.4.0-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
+Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.5.0-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
 
 ```swift
-.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.4.0-preview.1")
+.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.5.0-preview.1")
 ```
 
 The runnable [SwiftUI travel demo](https://github.com/AssetLib/demo-ios) includes bundled illustrations, generated accessors, and a connection sheet. It works before you create an account.
@@ -192,7 +192,7 @@ artwork.tab.trips
 
 ## Short looping video
 
-Unreleased: not in a tagged version. Not verified on an iPhone, iPad or simulator. Gapless looping is a device observation; no unit test establishes it.
+Since `0.5.0-preview.1`. Not verified on an iPhone, iPad or simulator. Gapless looping is a device observation; no unit test establishes it.
 
 A placement's artwork can carry a short, muted, looping MP4 clip next to its required poster. The console accepts only H.264 clips of at most 1280×720 pixels, 1–10 seconds and 4 MiB, with no audio, and signs a `video` descriptor on the base slot (`videoSchemaVersion: 1`). The SDK verifies the descriptor with the manifest, and the bytes before use:
 
