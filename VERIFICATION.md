@@ -1,4 +1,4 @@
-# Placement membership (unreleased) — October 11, 2026 (ET)
+# 0.6.0-preview.1 (placement membership) — October 11, 2026 (ET)
 
 Unit tests and builds on macOS (Apple Swift 6.4, Xcode 27.0), plain commands with no cache workaround, on a clean clone of `main` at `e9283d4` plus this change. Not a simulator, device or hosted run.
 
@@ -10,6 +10,13 @@ Unit tests and builds on macOS (Apple Swift 6.4, Xcode 27.0), plain commands wit
 - `python3 scripts/test_codegen.py`: `Ran 7 tests`, `OK`.
 - `swift build -c release`: `Build complete!`, including `AssetLibExample`.
 - `xcodebuild -scheme AssetLib -destination 'generic/platform=iOS Simulator' build`: `** BUILD SUCCEEDED **`. This compiles for the iOS Simulator SDK; no simulator was booted.
+
+Release checks for tag `0.6.0-preview.1`, 19:36 ET: a fresh clone of `main` at `fa5e828` plus the release commit's version strings (README, AGENTS.md, CHANGELOG.md, this file), same toolchain, plain commands. macOS unit tests and builds only.
+
+- `swift test`: `Test run with 76 tests in 9 suites passed` (75 passed, the optional hosted test skipped), with `Suite HistoryTests passed`.
+- `python3 scripts/test_codegen.py`: `Ran 7 tests`, `OK`.
+- `swift build -c release`: `Build complete!`, including `AssetLibExample`.
+- `node check-copy.mjs Tests/AssetLibTests/Fixtures` from the shared corpus: `identical Tests/AssetLibTests/Fixtures: 235/235 files (plus its own README.txt)`.
 
 # Short looping video on an iOS 27 Simulator — October 11, 2026
 

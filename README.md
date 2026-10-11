@@ -16,10 +16,10 @@ artwork.travel.coast
 
 ## Install
 
-Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.5.0-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
+Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.6.0-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
 
 ```swift
-.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.5.0-preview.1")
+.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.6.0-preview.1")
 ```
 
 The runnable [SwiftUI travel demo](https://github.com/AssetLib/demo-ios) includes bundled illustrations, generated accessors, and a connection sheet. It works before you create an account.
@@ -218,7 +218,7 @@ AssetLoopingVideo(client: client, reference: AssetCatalog.Travel.coast,
 - Only pinned Ed25519 manifests for the configured organization, app, and environment (staging or production) are accepted. Signatures cover exact UTF-8 payload bytes; key IDs cover exact PEM bytes.
 - Delivery uses HTTPS, exact scoped paths, the same origin, no cookies or credential storage, no redirects, bounded streaming, and an 8-second request deadline by default (30 seconds for clips).
 - Release sequences cannot decrease. Equal-sequence payload changes are rejected using byte equality, including Unicode-equivalent strings. Rollback is a new higher sequence pointing to earlier artwork.
-- The latest accepted release decides which placements have published artwork. If it has no slot with the reference's key, for example after a restore to a publication that predates the placement, `resolve` returns the bundled image without reading the cache or any older release. Cached bytes stay until normal eviction, so publishing the same image again is a cache hit. Not in a tagged version yet: `0.5.0-preview.1` and earlier keep showing an image cached from an older retained release.
+- The latest accepted release decides which placements have published artwork. If it has no slot with the reference's key, for example after a restore to a publication that predates the placement, `resolve` returns the bundled image without reading the cache or any older release. Cached bytes stay until normal eviction, so publishing the same image again is a cache hit. Since `0.6.0-preview.1`. `0.5.0-preview.1` and earlier keep showing an image cached from an older retained release.
 - State is re-read and signatures reverified per operation and after manifest downloads. Atomic disk commits use an OS lock and reject another client's newer state. Invalid durable state fails closed to bundled artwork.
 - Image length, SHA-256, PNG/WebP container, native decode, and dimensions are validated. Renditions must exactly match their declared physical dimensions; legacy WebP retains its logical aspect-ratio rule. When the current release publishes the key but its image can't be used (other dimensions or rendering, or a failed download or check), verified cached artwork from a retained older release is used, newest first, then the bundled image; older releases are never fetched as fallback.
 - Limits: 256 KiB manifest, 8 MiB image, 4 MiB clip, 100 slots, eight retained manifests, 3 MiB state, 50 MiB/100 disk cache entries. Native decoding additionally limits dimensions to 8,192 per axis and 16 megapixels; the image store keeps at most 32 images/64 MiB of decoded pixel buffers. Images retained by app views are outside that store budget.

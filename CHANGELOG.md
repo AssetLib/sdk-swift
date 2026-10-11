@@ -1,15 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0-preview.1 — October 11, 2026
 
-Planned as `0.6.0-preview.1`. Implements the shared contract revision of October 11, 2026 (placement membership).
+Implements the shared contract revision of October 11, 2026 (placement membership).
 
-- Fixes images that a console Restore could not take back. When the latest accepted release has no slot with a placement's key, for example after restoring a publication that predates the placement, `resolve` now returns the bundled image (`source == .bundle`, message "Using bundled artwork. The current release does not publish this placement.") without reading the cache, making a request or looking at older releases. Before, it kept serving bytes cached from an older retained release until that release left the eight-release history. An app that updates the SDK may see such a placement switch to its bundled image on the first resolve.
+- Fixes images that a console Restore could not take back. When the latest accepted release has no slot with a placement's key, for example after restoring a publication that predates the placement, `resolve` now returns the bundled image (`source == .bundle`, message "Using bundled artwork. The current release does not publish this placement.") without reading the cache, making a request or looking at older releases. Before, it kept serving bytes cached from an older retained release until that release left the eight-release history. An app that updates the SDK may see such a placement switch to its bundled image on the first resolve. Apps on `0.5.0-preview.1` and earlier keep the old behavior until they ship an app release with this version; nothing on the server changes it.
 - Only a missing key changes. A key the current release publishes at other dimensions or with another rendering, and a current image that can't be downloaded or verified, still fall back to compatible cached bytes from older retained releases, newest first, then to the bundled image; older releases are never fetched. Cached bytes are not deleted, so publishing the same image again is a cache hit. The arm decision is unchanged: with no slot the callback is not called, and an explicit arm keeps `armSource == .explicit`. `resolveVideo` already returned the poster when the current release has no clip for the placement; that placement's still image is now the bundled image too.
 - No public API, wire format or storage change. `AssetStorage` and `AssetTransport` gain no requirements.
 - Vendors the shared corpus revision of October 11, 2026: 7 new signed manifests (149 manifest cases) and `history.json` with 10 release-history cases, run by the new `HistoryTests`.
 
 Validation: on October 11, 2026 on macOS, `swift test` passed 76 tests in 9 suites (75 passed, the optional hosted test skipped), including all 149 signed manifest cases and the 10 `history.json` cases, each also checked for its request count, requests only to the latest release, and unchanged durable state and cache. Before the fix, exactly `removed-key-online`, `removed-key-offline` and `video-placement-removed-poster-image-is-bundled` failed; with the check temporarily widened to compare dimensions, the control case `present-other-dimensions-uses-history` failed. All 7 code-generation tests and `swift build -c release` passed, `xcodebuild` built the package for the iOS Simulator SDK, and `check-copy.mjs` found the corpus identical. These are macOS unit tests and builds; no simulator, device or hosted run is claimed.
+
+Validation (release commit): on October 11, 2026 on macOS (Apple Swift 6.4, Xcode 27.0), on a fresh clone of `main` at `fa5e828` with this commit's version strings, `swift test` passed 76 tests in 9 suites (75 passed, the optional hosted test skipped), `python3 scripts/test_codegen.py` ran 7 tests OK, `swift build -c release` completed including `AssetLibExample`, and `check-copy.mjs` found the corpus identical (235/235 files). macOS unit tests and builds only.
 
 ## 0.5.0-preview.1 — October 11, 2026
 
