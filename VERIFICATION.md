@@ -1,3 +1,14 @@
+# Short looping video on an iOS 27 Simulator — October 11, 2026
+
+A Simulator run, not a device test. A test app built against tag `0.5.0-preview.1` (`1b70079`) ran on a dedicated iPhone 18 Pro Simulator (iOS 27.0, 24A434; Xcode 27.0). It played a clip that a local console (with clip support) had validated, signed and published. The clip was 1280×720, H.264 Main@3.1, 30 fps, 4 s, with no audio and a drawn frame counter. It was delivered over a local HTTPS front whose CA was trusted in the Simulator.
+
+- `resolveVideo` returned `remote` on first launch. The downloaded clip's SHA-256 matched the signed descriptor.
+- `AssetLoopingVideo`: frames advanced 15 per 0.5 s and the counter wrapped every 4 s. Over 10 minutes it ran 157 loops at 30.002 fps from the first to the last sample, with no cumulative stall at the loop points.
+- phys_footprint stayed flat, at about 29.4 and 31.3 MB at the two alternating loop positions sampled, with about 0.1 MB drift each over 9 minutes. There was exactly 1 manifest request and 1 clip request.
+- With the HTTPS origin stopped, a relaunch played the clip from cache and `resolveVideo` returned `cache`.
+- With Reduce Motion on, the poster showed and the frames did not change.
+- Not verified: iPhone or iPad hardware, gapless looping by eye, the two-player limit, pausing off screen or in the background, and player-error fallback on a device.
+
 # 0.4.0-preview.1 (tintable icons) — October 10, 2026
 
 Released as tag `0.4.0-preview.1` after GitHub Actions passed for the release commit. Checks run on the `feat/tintable-icons` branch before the merge. Plain commands on macOS, no cache workaround:

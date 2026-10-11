@@ -192,7 +192,7 @@ artwork.tab.trips
 
 ## Short looping video
 
-Since `0.5.0-preview.1`. Not verified on an iPhone, iPad or simulator. Gapless looping is a device observation; no unit test establishes it.
+Since `0.5.0-preview.1`. Checked on an iOS 27 Simulator on October 11, 2026, against a local console: the clip was downloaded, verified and cached; it played muted and looping at 30 fps for 10 minutes (157 loops) with flat memory and no re-download; it replayed from cache with the server unreachable; and it showed the poster under Reduce Motion. Not verified on an iPhone or iPad. Gapless looping is a device observation; no Simulator run establishes it.
 
 A placement's artwork can carry a short, muted, looping MP4 clip next to its required poster. The console accepts only H.264 clips of at most 1280×720 pixels, 1–10 seconds and 4 MiB, with no audio, and signs a `video` descriptor on the base slot (`videoSchemaVersion: 1`). The SDK verifies the descriptor with the manifest, and the bytes before use:
 
