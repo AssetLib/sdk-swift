@@ -190,14 +190,37 @@ artwork.tab.trips
 - Rendering is part of the placement contract, like width and height. A reference uses only signed descriptors with the same rendering, checked on the selected appearance or arm cell. A descriptor with a different rendering, or one this SDK does not know, is never read from the cache or downloaded; as with a size mismatch, the client uses an older retained release that matches, otherwise the bundled image. Other placements are unaffected.
 - Older SDK versions ignore the field and draw the mask untinted. Update the SDK before declaring a template placement.
 
+## Short looping video
+
+Unreleased: not in a tagged version. Not verified on an iPhone, iPad or simulator. Gapless looping is a device observation; no unit test establishes it.
+
+A placement's artwork can carry a short, muted, looping MP4 clip next to its required poster. The console accepts only H.264 clips of at most 1280×720 pixels, 1–10 seconds and 4 MiB, with no audio, and signs a `video` descriptor on the base slot (`videoSchemaVersion: 1`). The SDK verifies the descriptor with the manifest, and the bytes before use:
+
+```swift
+// Inside body, with the store and client from WelcomeView:
+AssetLoopingVideo(client: client, reference: AssetCatalog.Travel.coast,
+                  poster: artwork.travel.coast, contentMode: .fill)
+    .frame(height: 240)
+    .clipped()
+    .accessibilityHidden(true) // Decorative; label it like an image when it is informative.
+```
+
+- `client.resolveVideo(reference)` is explicit. `resolve`, the store and generated accessors never download a clip. It returns an `AssetVideo`: a local `fileURL` with `width`, `height`, `duration`, `frameRate`, `sequence` and `source` `.remote` or `.cache`, or `.poster` with no URL, when the app keeps showing the placement's image.
+- Only the current release downloads. If it has no clip for the placement, the result is the poster. If its clip can't be used (the download fails or times out, a check fails, or the cached file was evicted while offline), verified cached clips of the placement from older retained releases are tried newest first, then the poster.
+- A clip is used only after its length and SHA-256 match the descriptor and a bounded header check finds `ftyp` first, `moov` before the first `mdat`, no `moof`, and an `avc1` sample entry at the signed width and height. No frames are decoded.
+- Clips are stored as `<sha256>.mp4` in the storage namespace under Application Support, excluded from backup, inside the same 50 MiB / 100-entry cache as images. They need `FileAssetStorage`; another storage always gets the poster.
+- Downloads send `Accept: video/mp4`, are capped at the signed size (at most 4 MiB) and have their own deadline: `HTTPSAssetTransport(timeout:videoTimeout:)`, where `videoTimeout` defaults to 30 seconds and accepts 0.02–30.
+- `AssetLoopingVideo` plays the file muted and without controls, through an `AVQueuePlayer` and an `AVPlayerLooper` over the whole asset in an `AVPlayerLayer`. It shows the poster until the first frame renders, under Reduce Motion (and then downloads nothing), after a player error, while off screen or in the background (hidden, on macOS), and while two other clips are playing. AVFoundation and AVKit are system frameworks, so there are still no third-party dependencies.
+- Older SDK versions ignore the clip and keep showing the poster.
+
 ## Delivery and failure behavior
 
 - Only pinned Ed25519 manifests for the configured organization, app, and environment (staging or production) are accepted. Signatures cover exact UTF-8 payload bytes; key IDs cover exact PEM bytes.
-- Delivery uses HTTPS, exact scoped paths, the same origin, no cookies or credential storage, no redirects, bounded streaming, and an 8-second request deadline by default.
+- Delivery uses HTTPS, exact scoped paths, the same origin, no cookies or credential storage, no redirects, bounded streaming, and an 8-second request deadline by default (30 seconds for clips).
 - Release sequences cannot decrease. Equal-sequence payload changes are rejected using byte equality, including Unicode-equivalent strings. Rollback is a new higher sequence pointing to earlier artwork.
 - State is re-read and signatures reverified per operation and after manifest downloads. Atomic disk commits use an OS lock and reject another client's newer state. Invalid durable state fails closed to bundled artwork.
 - Image length, SHA-256, PNG/WebP container, native decode, and dimensions are validated. Renditions must exactly match their declared physical dimensions; legacy WebP retains its logical aspect-ratio rule. A current download failure can use verified cached artwork from a retained older release; older releases are never fetched as fallback.
-- Limits: 256 KiB manifest, 8 MiB image, 100 slots, eight retained manifests, 3 MiB state, 50 MiB/100 disk cache entries. Native decoding additionally limits dimensions to 8,192 per axis and 16 megapixels; the image store keeps at most 32 images/64 MiB of decoded pixel buffers. Images retained by app views are outside that store budget.
+- Limits: 256 KiB manifest, 8 MiB image, 4 MiB clip, 100 slots, eight retained manifests, 3 MiB state, 50 MiB/100 disk cache entries. Native decoding additionally limits dimensions to 8,192 per axis and 16 megapixels; the image store keeps at most 32 images/64 MiB of decoded pixel buffers. Images retained by app views are outside that store budget.
 
 This preview handles still PNG/WebP artwork through signed rendition extension v1 and WebP legacy fallback. It does not implement Figma import, built-in experiment assignment or tracking, usage analytics, automatic screen discovery, native Background Assets, or push updates. Key rotation works through the overlapping `pinnedPublicKeys` set described above; the app must already trust the new key before the console activates it. A plain image cannot report whether it was visible, and layout modifiers do not tell the downloader a desired rendition.
 
@@ -209,7 +232,7 @@ python3 scripts/test_codegen.py
 swift build -c release
 ```
 
-The committed test-only corpus contains signed interoperability cases shared with the JavaScript and Kotlin clients. Tests cover signatures, scope, malformed payloads, exact-byte equivocation, all 115 shared signed cases, 18 shared cell resolution scenarios, four shared rendition selection scenarios, 10 shared rendering resolution scenarios, real ImageIO PNG/WebP decoding, exact rendition dimensions, target-size ranking, candidate failure, cache migration, mismatched layouts, rollback, corrupted bytes, offline restart, concurrent storage clients, and corrupt durable state. Variant tests cover staging isolation, strict axes and cell validation, decisions, cell-specific cache and historical fallback, and store selection changes. Accessibility cases cover locale selection, malformed metadata, UTF-16 limits, paired historical descriptions, offline restart, missing remote descriptions, and native image snapshots with described bundled fallback. Rendering tests cover malformed and unknown values, historical and offline descriptors, the absence of downloads on a mismatch, and template rendering of remote and bundled images.
+The committed test-only corpus contains signed interoperability cases shared with the JavaScript and Kotlin clients. Tests cover signatures, scope, malformed payloads, exact-byte equivocation, all 142 shared signed cases, 18 shared cell resolution scenarios, four shared rendition selection scenarios, 10 shared rendering resolution scenarios, real ImageIO PNG/WebP decoding, exact rendition dimensions, target-size ranking, candidate failure, cache migration, mismatched layouts, rollback, corrupted bytes, offline restart, concurrent storage clients, and corrupt durable state. Variant tests cover staging isolation, strict axes and cell validation, decisions, cell-specific cache and historical fallback, and store selection changes. Accessibility cases cover locale selection, malformed metadata, UTF-16 limits, paired historical descriptions, offline restart, missing remote descriptions, and native image snapshots with described bundled fallback. Rendering tests cover malformed and unknown values, historical and offline descriptors, the absence of downloads on a mismatch, and template rendering of remote and bundled images. Video tests cover the 27 shared clip manifests and `video.json` cases, the header check, cache-only history, the poster for a release without a clip, the clip deadline and byte bounds through stubbed HTTPS, the shared cache budget, loading the cached file with `AVURLAsset`, and the looping view's Reduce Motion, error and two-player rules.
 
 An optional read-only hosted test takes a path to your public configuration outside the repository:
 

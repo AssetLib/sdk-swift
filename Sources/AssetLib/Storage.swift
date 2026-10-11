@@ -148,10 +148,35 @@ public actor FileAssetStorage: AssetStorage {
         try data.write(to: directory.appendingPathComponent(hash + ".asset"), options: .atomic)
         try pruneCache()
     }
+
+    /// A cached clip's bytes and file URL. The caller verifies the bytes before handing the URL to a player.
+    func video(for hash: String) throws -> (data: Data, url: URL)? {
+        guard matches(hash, hashPattern) else { throw AssetLibError.invalid("Invalid cache key.") }
+        let url = videoURL(hash)
+        return try boundedRead(url, limit: AssetLimits.videoBytes).map { ($0, url) }
+    }
+
+    /// Writes `<hash>.mp4` inside the shared cache budget and returns its file URL.
+    func saveVideo(_ data: Data, hash: String) throws -> URL {
+        guard matches(hash, hashPattern), data.count <= AssetLimits.videoBytes, hashBytes(data) == hash else { throw AssetLibError.invalid("Invalid cache entry.") }
+        let descriptor = try lock(directory.appendingPathComponent("cache.lock"))
+        defer { unlock(descriptor) }
+        var url = videoURL(hash)
+        try data.write(to: url, options: .atomic)
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try url.setResourceValues(values)
+        try pruneCache()
+        guard files.fileExists(atPath: url.path) else { throw AssetLibError.invalid("The clip did not fit the cache budget.") }
+        return url
+    }
+
+    private func videoURL(_ hash: String) -> URL { directory.appendingPathComponent(hash + ".mp4") }
+
     /// Caller holds cache.lock, including when importing an older namespace.
     private func pruneCache() throws {
         let entries = try files.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey])
-            .filter { ["webp", "asset"].contains($0.pathExtension) }
+            .filter { ["webp", "asset", "mp4"].contains($0.pathExtension) }
             .map { url -> (URL, Int, Date) in
                 let info = try url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
                 return (url, info.fileSize ?? 0, info.contentModificationDate ?? .distantPast)

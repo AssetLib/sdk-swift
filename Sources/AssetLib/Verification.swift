@@ -41,7 +41,8 @@ enum ManifestVerifier {
               payload.environment == config.environment, (1...2_147_483_647).contains(payload.sequence),
               fractional != nil || date.date(from: payload.createdAt) != nil, (1...100).contains(payload.slots.count),
               payload.renditionSchemaVersion == nil || payload.renditionSchemaVersion == 1,
-              payload.variantSchemaVersion == nil || payload.variantSchemaVersion == 1 else {
+              payload.variantSchemaVersion == nil || payload.variantSchemaVersion == 1,
+              payload.videoSchemaVersion == nil || payload.videoSchemaVersion == 1 else {
             throw AssetLibError.invalid("Unsupported or cross-app manifest payload.")
         }
         var keys = Set<String>()
@@ -53,6 +54,7 @@ enum ManifestVerifier {
             try validateImage(slot, renditionSchemaVersion: payload.renditionSchemaVersion, config: config)
             try validateVariants(slot, variantSchemaVersion: payload.variantSchemaVersion,
                                  renditionSchemaVersion: payload.renditionSchemaVersion, config: config)
+            try validateVideo(slot, videoSchemaVersion: payload.videoSchemaVersion, config: config)
         }
         return payload
     }
@@ -142,8 +144,13 @@ enum ManifestVerifier {
 
     static func candidateURL(_ candidate: AssetCandidate, assetID: String, config: AssetConfiguration) throws -> URL {
         let path = "/api/delivery/\(config.orgId)/\(config.appId)/assets/\(assetID)" + (candidate.isLegacy ? "" : "/renditions/\(candidate.sha256)")
+        return try deliveryURL(candidate.url, path: path, config: config)
+    }
+
+    /// Resolves a signed URL against the manifest origin and requires exactly `path`, with no credentials, query or fragment.
+    static func deliveryURL(_ signed: String, path: String, config: AssetConfiguration) throws -> URL {
         guard let base = URL(string: config.manifestUrl), let baseParts = URLComponents(url: base, resolvingAgainstBaseURL: true),
-              let url = URL(string: candidate.url, relativeTo: base)?.absoluteURL,
+              let url = URL(string: signed, relativeTo: base)?.absoluteURL,
               let parts = URLComponents(url: url, resolvingAgainstBaseURL: true), parts.scheme == baseParts.scheme,
               parts.host?.lowercased() == baseParts.host?.lowercased(), (parts.port ?? 443) == (baseParts.port ?? 443),
               parts.user == nil, parts.password == nil, parts.query == nil, parts.fragment == nil,

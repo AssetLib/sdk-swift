@@ -12,7 +12,7 @@ python3 scripts/test_codegen.py   # generator tests, including "Examples/Artwork
 swift build -c release            # also compiles Examples/ through the AssetLibExample target
 ```
 
-- Focused run: `swift test --filter VariantTests`. Suites: `ProtocolTests`, `RenditionTests`, `VariantTests`, `RenderingTests`, `StorageIdentityTests`, `HostedAcceptance`.
+- Focused run: `swift test --filter VariantTests`. Suites: `ProtocolTests`, `RenditionTests`, `VariantTests`, `RenderingTests`, `StorageIdentityTests`, `VideoTests`, `LoopingVideoTests`, `HostedAcceptance`.
 - Optional read-only hosted check: `ASSETLIB_PUBLIC_CONFIG_FILE=/absolute/path/to/public-config.json swift test --filter HostedAcceptance`. Keep that file outside the repo; never commit or print it.
 - After changing the generator or `Examples/catalog.json`: `python3 scripts/generate-catalog.py Examples/catalog.json Examples/Artwork.generated.swift`.
 - If a sandbox blocks the default Clang module cache, `swift build` fails before compiling. VERIFICATION.md records the workaround (writable `CLANG_MODULE_CACHE_PATH` and `SWIFTPM_MODULECACHE_OVERRIDE`, plus `--disable-sandbox`). Do not edit `Package.swift` to get around it.
@@ -24,7 +24,9 @@ swift build -c release            # also compiles Examples/ through the AssetLib
 - `Sources/AssetLib/Verification.swift`: Ed25519 and scope checks, durable-state verification, rendition candidate order, native ImageIO decode checks.
 - `Sources/AssetLib/Models.swift`: `AssetConfiguration` (validation, `storageNamespace`, legacy namespaces), `AssetLimits`, manifest and variant models, `ResolvedAsset`.
 - `Sources/AssetLib/Storage.swift`: `FileAssetStorage` (OS file lock, atomic commit, one-time namespace migration, bounded cache).
-- `Sources/AssetLib/Transport.swift`: HTTPS GET with no redirects, cookies, or credential storage, and a streamed byte limit.
+- `Sources/AssetLib/Transport.swift`: HTTPS GET with no redirects, cookies, or credential storage, a streamed byte limit, and a separate `video/mp4` deadline.
+- `Sources/AssetLib/Video.swift`: the signed `video` descriptor rules, the bounded MP4 header walk, and `AssetVideo`. `AssetClient.resolveVideo` lives in `AssetClient.swift`.
+- `Sources/AssetLib/AssetLoopingVideo.swift`: the AVFoundation looping view, its testable `LoopingVideoModel`, and the two-player `LoopingVideoSlots`.
 - `Sources/AssetLib/AssetImageStore.swift`: `@MainActor @Observable` store behind the generated accessors.
 - `Sources/AssetLib/PrivacyInfo.xcprivacy`: declares file-timestamp access (C617.1). Update it if required-reason API use changes.
 - `scripts/generate-catalog.py`: offline generator apps copy; apps commit its output.
@@ -32,9 +34,9 @@ swift build -c release            # also compiles Examples/ through the AssetLib
 
 ## Shared contract corpus
 
-- `Tests/AssetLibTests/Fixtures/` is a byte-for-byte copy of the signed interoperability corpus that the Kotlin SDK vendors at `sdk/src/test/resources/fixtures/` and that is also run against the JavaScript SDK where the corpus is generated: 115 signed manifest cases (`cases.json` is the index, each case names its `production` or `staging` config), 18 variant resolution entries, 6 stateful cases, 2 byte-failure cases, 4 rendition selections (`renditions.json`), and 10 rendering resolution cases (`rendering.json`). `README.txt` is the only local file.
+- `Tests/AssetLibTests/Fixtures/` is a byte-for-byte copy of the signed interoperability corpus that the Kotlin SDK vendors at `sdk/src/test/resources/fixtures/` and that is also run against the JavaScript SDK where the corpus is generated: 142 signed manifest cases (`cases.json` is the index, each case names its `production` or `staging` config), 18 variant resolution entries, 6 stateful cases, 2 byte-failure cases, 4 rendition selections (`renditions.json`), 10 rendering resolution cases (`rendering.json`), and 2 clip cases plus 2 clip byte failures (`video.json`). Check the copy with `node check-copy.mjs Tests/AssetLibTests/Fixtures` from the shared corpus. `README.txt` is the only local file.
 - The corpus is generated outside this repo. Never hand-edit, re-sign, or reformat a fixture: signatures cover exact payload bytes, and outer JSON whitespace differs from the signed payload on purpose. A contract change lands in the corpus first; then replace the whole directory (keep `README.txt`) here and in sdk-android in the same pass.
-- No CI step checks the copy against its source. A `diff -r` against the Kotlin repo's fixture directory should show only `README.txt`.
+- No CI step checks the copy against its source.
 - `keys/TEST_ONLY_*` is deliberately public test material. Never trust it outside tests.
 - Behavior must match the Kotlin and JavaScript SDKs. A semantic change here needs the matching change and corpus cases in the other SDKs.
 
@@ -42,7 +44,7 @@ swift build -c release            # also compiles Examples/ through the AssetLib
 
 - **Bundled fallback always wins on failure.** Invalid config, storage, signature, scope, download, hash, decode, dimensions, cancellation, or decision state returns `source == .bundle` with no bytes, and the app renders its bundled image. Never render unverified bytes. Never remove or weaken a fallback path.
 - **Signatures.** Verify Ed25519 over the exact UTF-8 bytes of the `payload` string before reading it. Trust comes only from `pinnedPublicKey` / `pinnedPublicKeys` in the public config; an envelope cannot supply a key. The key ID is the first 16 hex characters of SHA-256 of the exact PEM text. Payload `orgId`, `appId`, and `environment` must equal the config exactly.
-- **Delivery.** HTTPS, same origin, exact scoped paths: `/api/delivery/{orgId}/{appId}/environments/{environment}/manifest`, plus the legacy `/api/delivery/{orgId}/{appId}/manifest` for production only. No redirects, cookies, or credentials. Byte limits are enforced while streaming; default deadline 8 seconds.
+- **Delivery.** HTTPS, same origin, exact scoped paths: `/api/delivery/{orgId}/{appId}/environments/{environment}/manifest`, plus the legacy `/api/delivery/{orgId}/{appId}/manifest` for production only. No redirects, cookies, or credentials. Byte limits are enforced while streaming; default deadline 8 seconds, and 30 seconds for `video/mp4` clips (`videoTimeout`).
 - **Replay and rollback.** Sequences never decrease. Equal sequence with different payload bytes is rejected using `Data(payload.utf8)`, never Swift `String ==` (that uses Unicode equivalence). Rollback is a new, higher sequence.
 - **Durable state.** Commit a verified higher release before exposing it. State is re-read and re-verified per operation and after each manifest download. Unverifiable state fails closed to the bundle and blocks refresh; never delete it automatically. `disconnect()` keeps replay history.
 - **Storage namespace** is SHA-256 of origin, org, app, and environment (`AssetConfiguration.storageNamespace`). Staging and production stay isolated. Changing the formula strands replay floors and caches; it requires a verified one-time migration like `legacyStorageNamespaces` plus the `namespace-v2` marker, with `StorageIdentityTests` extended.
@@ -56,7 +58,7 @@ swift build -c release            # also compiles Examples/ through the AssetLib
 
 ## Public API and compatibility
 
-- Public surface: `AssetClient`, `AssetConfiguration`, `AssetImageStore`, `AssetArtwork`, `AssetReference`, `AssetRendering`, `AssetPixelSize`, `AssetFormat`, `AssetAppearance`, `AssetArmSource`, `AssetAccessibility`, `ResolvedAsset`, `RefreshResult`, `AssetSource`, `AssetLimits`, `AssetLibError`, the `AssetStorage` and `AssetTransport` protocols, `FileAssetStorage`, `HTTPSAssetTransport`, `hashBytes`.
+- Public surface: `AssetClient`, `AssetConfiguration`, `AssetImageStore`, `AssetArtwork`, `AssetReference`, `AssetRendering`, `AssetPixelSize`, `AssetFormat`, `AssetAppearance`, `AssetArmSource`, `AssetAccessibility`, `ResolvedAsset`, `RefreshResult`, `AssetSource`, `AssetVideo`, `AssetVideoSource`, `AssetLoopingVideo`, `AssetLimits`, `AssetLibError`, the `AssetStorage` and `AssetTransport` protocols, `FileAssetStorage`, `HTTPSAssetTransport`, `hashBytes`.
 - Apps commit generated code that calls `AssetReference(key:width:height:)`, `AssetImageStore.image(for:fallback:)`, `AssetImageStore.artwork(for:fallback:bundledAccessibility:locale:requireDescription:)`, and `AssetAccessibility(defaultLocale:descriptions:)`. Keep these source-compatible. The `AssetLibExample` target and `test_codegen.py` catch breaks.
 - Add parameters with defaults; do not remove or reorder existing ones. A new requirement on `AssetStorage` or `AssetTransport` breaks custom implementations; call it out in CHANGELOG.md.
 - Keep Swift 6 strict concurrency clean (`Sendable`, actor isolation, `@MainActor` store).

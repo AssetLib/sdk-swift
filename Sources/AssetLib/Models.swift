@@ -8,6 +8,7 @@ public enum AssetLibError: Error, LocalizedError, Sendable, Equatable {
 public enum AssetLimits {
     public static let manifestBytes = 256 * 1024
     public static let assetBytes = 8 * 1024 * 1024
+    public static let videoBytes = 4 * 1024 * 1024
     public static let stateBytes = 3 * 1024 * 1024
     public static let cacheBytes = 50 * 1024 * 1024
     public static let cacheEntries = 100
@@ -195,8 +196,9 @@ struct ManifestPayload: Codable, Sendable {
     let slots: [ManifestSlot]
     let renditionSchemaVersion: Int?
     let variantSchemaVersion: Int?
+    let videoSchemaVersion: Int?
 
-    enum CodingKeys: String, CodingKey { case schemaVersion, orgId, appId, environment, sequence, createdAt, slots, renditionSchemaVersion, variantSchemaVersion }
+    enum CodingKeys: String, CodingKey { case schemaVersion, orgId, appId, environment, sequence, createdAt, slots, renditionSchemaVersion, variantSchemaVersion, videoSchemaVersion }
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         schemaVersion = try c.decode(Int.self, forKey: .schemaVersion)
@@ -209,6 +211,7 @@ struct ManifestPayload: Codable, Sendable {
         // Null is not absence: malformed extensions must fail closed.
         renditionSchemaVersion = c.contains(.renditionSchemaVersion) ? try c.decode(Int.self, forKey: .renditionSchemaVersion) : nil
         variantSchemaVersion = c.contains(.variantSchemaVersion) ? try c.decode(Int.self, forKey: .variantSchemaVersion) : nil
+        videoSchemaVersion = c.contains(.videoSchemaVersion) ? try c.decode(Int.self, forKey: .videoSchemaVersion) : nil
     }
 }
 
@@ -228,8 +231,13 @@ struct ManifestSlot: Codable, Sendable {
     let cells: [ManifestCell]?
     /// Absent means original. A well-formed unknown value makes only this descriptor incompatible.
     let rendering: String?
+    /// Base slots only; never projected onto a selected cell.
+    let video: ManifestVideo?
+    /// The Lottie extension's contents are ignored here; its presence still excludes a clip.
+    let hasAnimation: Bool
 
-    enum CodingKeys: String, CodingKey { case key, screen, width, height, assetId, sha256, url, mime, bytes, renditions, accessibility, variants, cells, rendering }
+    enum CodingKeys: String, CodingKey { case key, screen, width, height, assetId, sha256, url, mime, bytes, renditions, accessibility, variants, cells, rendering, video }
+    private enum ExtensionKeys: String, CodingKey { case animation }
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         key = try c.decode(String.self, forKey: .key)
@@ -246,6 +254,8 @@ struct ManifestSlot: Codable, Sendable {
         variants = c.contains(.variants) ? try c.decode(ManifestVariants.self, forKey: .variants) : nil
         cells = c.contains(.cells) ? try c.decode([ManifestCell].self, forKey: .cells) : nil
         rendering = c.contains(.rendering) ? try c.decode(String.self, forKey: .rendering) : nil
+        video = c.contains(.video) ? try c.decode(ManifestVideo.self, forKey: .video) : nil
+        hasAnimation = try decoder.container(keyedBy: ExtensionKeys.self).contains(.animation)
     }
 
     /// Project a selected cell onto its placement so image validation and rendition selection stay shared.
@@ -255,7 +265,7 @@ struct ManifestSlot: Codable, Sendable {
         key = placement.key; screen = placement.screen; width = placement.width; height = placement.height
         assetId = cell.assetId; sha256 = cell.sha256; url = cell.url; mime = cell.mime; bytes = cell.bytes
         renditions = cell.renditions; accessibility = cell.accessibility; rendering = cell.rendering
-        variants = nil; cells = nil
+        variants = nil; cells = nil; video = nil; hasAnimation = false
     }
 }
 
@@ -292,9 +302,12 @@ struct ManifestCell: Codable, Sendable {
     let renditions: [ManifestRendition]?
     let accessibility: AssetAccessibility?
     let rendering: String?
+    /// Clips are allowed on base slots only, so any `video` key on a cell rejects the manifest.
+    let hasVideo: Bool
 
     // Native clients deliberately ignore states, defaultState, and other unknown keys.
     enum CodingKeys: String, CodingKey { case appearance, arm, assetId, sha256, url, mime, bytes, renditions, accessibility, rendering }
+    private enum ExtensionKeys: String, CodingKey { case video }
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         appearance = c.contains(.appearance) ? try c.decode(AssetAppearance.self, forKey: .appearance) : nil
@@ -307,6 +320,7 @@ struct ManifestCell: Codable, Sendable {
         renditions = c.contains(.renditions) ? try c.decode([ManifestRendition].self, forKey: .renditions) : nil
         accessibility = c.contains(.accessibility) ? try c.decode(AssetAccessibility.self, forKey: .accessibility) : nil
         rendering = c.contains(.rendering) ? try c.decode(String.self, forKey: .rendering) : nil
+        hasVideo = try decoder.container(keyedBy: ExtensionKeys.self).contains(.video)
     }
 }
 

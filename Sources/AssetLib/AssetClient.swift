@@ -166,6 +166,61 @@ public actor AssetClient {
         return fallback(decision.explain(message), armSource: decision.source)
     }
 
+    /// Resolves the base slot's short looping clip to a verified local `.mp4`. Only the latest release may download.
+    /// If it has no clip for the placement, the result is the poster. If its clip can't be used, verified cached clips
+    /// of the placement from older retained releases are tried newest first, without downloading. Any other failure
+    /// returns the poster outcome, and the caller keeps showing the placement's resolved image or bundled fallback.
+    /// Requires `FileAssetStorage`.
+    public func resolveVideo(_ reference: AssetReference) async -> AssetVideo {
+        await acquire(); defer { release() }
+        await load()
+        guard validReference(reference) else { return poster("Invalid generated asset reference.") }
+        guard !Task.isCancelled else { return poster("Video request cancelled.") }
+        if let storageFailure { return poster(storageFailure) }
+        // A player needs a file, so other storages always get the poster.
+        guard let files = storage as? FileAssetStorage else { return poster("Clips need FileAssetStorage.") }
+        var message = "No compatible published clip is available."
+        for (index, envelope) in state.history.enumerated() {
+            do {
+                try Task.checkCancellation()
+                let payload = try ManifestVerifier.verify(envelope, config: configuration)
+                guard let slot = payload.slots.first(where: {
+                    $0.key == reference.key && $0.width == reference.width && $0.height == reference.height
+                        && ($0.rendering ?? AssetRendering.original.rawValue) == reference.rendering.rawValue
+                }), let video = slot.video else {
+                    // The current release decides whether the placement has a clip; older releases only supply cache.
+                    if index == 0 { return poster("The current release has no clip for this placement.") }
+                    continue
+                }
+                // An unreadable or unverifiable cached file is a miss; the current release downloads over it.
+                if let cached = try? await files.video(for: video.sha256), ManifestVerifier.verifiedVideo(cached.data, video: video) {
+                    return clip(video, url: cached.url, source: .cache, sequence: payload.sequence,
+                                message: index == 0 ? "Verified clip from this device." : "Using the verified clip from release \(payload.sequence). \(message)")
+                }
+                guard index == 0 else { continue }
+                let data = try await transport.get(ManifestVerifier.videoURL(video, assetID: slot.assetId, config: configuration),
+                                                   maximumBytes: video.bytes, accept: "video/mp4")
+                try Task.checkCancellation()
+                guard ManifestVerifier.verifiedVideo(data, video: video) else {
+                    throw AssetLibError.invalid("Clip does not match the signed bytes or MP4 header.")
+                }
+                let url = try await files.saveVideo(data, hash: video.sha256)
+                return clip(video, url: url, source: .remote, sequence: payload.sequence, message: "Downloaded and verified clip.")
+            } catch { message = error.localizedDescription }
+        }
+        return poster(message)
+    }
+
+    private func clip(_ video: ManifestVideo, url: URL, source: AssetVideoSource, sequence: Int, message: String) -> AssetVideo {
+        .init(fileURL: url, width: video.width, height: video.height, duration: .milliseconds(video.durationMs),
+              frameRate: video.frameRate, source: source, sequence: sequence, message: message)
+    }
+
+    private func poster(_ message: String) -> AssetVideo {
+        .init(fileURL: nil, width: nil, height: nil, duration: nil, frameRate: nil, source: .poster, sequence: nil,
+              message: "Showing the poster. \(message)")
+    }
+
     private func currentSlot(for reference: AssetReference) -> ManifestSlot? {
         state.history.first.flatMap { try? ManifestVerifier.verify($0, config: configuration) }?.slots.first {
             $0.key == reference.key && $0.width == reference.width && $0.height == reference.height
