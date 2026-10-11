@@ -1,3 +1,15 @@
+# Placement membership (unreleased) — October 11, 2026 (ET)
+
+Unit tests and builds on macOS (Apple Swift 6.4, Xcode 27.0), plain commands with no cache workaround, on a clean clone of `main` at `e9283d4` plus this change. Not a simulator, device or hosted run.
+
+- `node check-copy.mjs Tests/AssetLibTests/Fixtures` from the shared corpus: `identical Tests/AssetLibTests/Fixtures: 235/235 files (plus its own README.txt)`.
+- Before the change to `resolve`, `swift test --filter HistoryTests` failed with 8 issues: the `history.json` cases `removed-key-online`, `removed-key-offline` and `video-placement-removed-poster-image-is-bundled` each returned cached artwork from an older release, and the arm-source test failed for both of its resolves. The other 7 history cases passed.
+- `swift test`: `Test run with 76 tests in 9 suites passed` (75 passed, the optional hosted test skipped). This includes all 149 signed manifest cases, the 10 `history.json` cases and the unchanged `historicalDescriptorsFollowTheSameRuleAcrossOfflineRestart` and video tests.
+- With the new guard disabled, the three cases above failed again. With the guard widened to compare width and height too, only the control case `present-other-dimensions-uses-history` failed (it returned the bundle). The guard was restored afterwards.
+- `python3 scripts/test_codegen.py`: `Ran 7 tests`, `OK`.
+- `swift build -c release`: `Build complete!`, including `AssetLibExample`.
+- `xcodebuild -scheme AssetLib -destination 'generic/platform=iOS Simulator' build`: `** BUILD SUCCEEDED **`. This compiles for the iOS Simulator SDK; no simulator was booted.
+
 # Short looping video on an iOS 27 Simulator — October 11, 2026
 
 A Simulator run, not a device test. A test app built against tag `0.5.0-preview.1` (`1b70079`) ran on a dedicated iPhone 18 Pro Simulator (iOS 27.0, 24A434; Xcode 27.0). It played a clip that a local console (with clip support) had validated, signed and published. The clip was 1280×720, H.264 Main@3.1, 30 fps, 4 s, with no audio and a drawn frame counter. It was delivered over a local HTTPS front whose CA was trusted in the Simulator.

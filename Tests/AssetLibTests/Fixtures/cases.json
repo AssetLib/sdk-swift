@@ -856,6 +856,48 @@
       "verification": "reject",
       "reason": "Malformed video extension: on-cell.",
       "config": "production"
+    },
+    {
+      "file": "manifests/history/save-added-seq11.json",
+      "verification": "accept",
+      "reason": "A release that adds travel.save beside a changed travel.coast.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/history/save-removed-seq12.json",
+      "verification": "accept",
+      "reason": "Restored content that predates travel.save: the key is absent, so that placement has no published artwork.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/history/save-republished-seq13.json",
+      "verification": "accept",
+      "reason": "travel.save is published again with the same image as sequence 11.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/history/save-resized-seq12.json",
+      "verification": "accept",
+      "reason": "travel.save is present at other dimensions: incompatible with a 40×30 reference, not removed.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/history/save-template-seq12.json",
+      "verification": "accept",
+      "reason": "travel.save is present with template rendering: incompatible with an original reference, not removed.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/history/save-replaced-seq12.json",
+      "verification": "accept",
+      "reason": "travel.save is present and compatible, with new artwork.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/history/coast-removed-seq12.json",
+      "verification": "accept",
+      "reason": "travel.coast is absent: neither its clip nor its still image is published.",
+      "config": "production"
     }
   ],
   "configs": {

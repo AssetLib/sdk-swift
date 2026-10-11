@@ -1,0 +1,242 @@
+{
+  "rule": "Membership is decided by the latest accepted release only. If it has no slot whose key equals the reference key, resolve returns the bundled fallback without reading the cache, making a request or inspecting an older release; resolveVideo returns the poster when that release has no compatible slot with a clip. If it publishes the key, resolution is unchanged: only that release may download, and an incompatible slot or unavailable bytes fall back to already cached, compatible, hash-valid bytes from older retained releases, newest first, then to the bundled fallback.",
+  "cases": [
+    {
+      "name": "removed-key-online",
+      "reason": "The current release does not publish travel.save, so the cached image from sequence 11 is not used.",
+      "releases": [
+        "manifests/history/save-added-seq11.json",
+        "manifests/history/save-removed-seq12.json"
+      ],
+      "cached": [
+        "assets/coast.webp"
+      ],
+      "cachedVideos": [],
+      "network": "online",
+      "resolve": "image",
+      "ref": {
+        "key": "travel.save",
+        "width": 40,
+        "height": 30
+      },
+      "expect": "bundled",
+      "assetRequests": 0,
+      "highestSequence": 12
+    },
+    {
+      "name": "removed-key-offline",
+      "reason": "The same removal without a network.",
+      "releases": [
+        "manifests/history/save-added-seq11.json",
+        "manifests/history/save-removed-seq12.json"
+      ],
+      "cached": [
+        "assets/coast.webp"
+      ],
+      "cachedVideos": [],
+      "network": "offline",
+      "resolve": "image",
+      "ref": {
+        "key": "travel.save",
+        "width": 40,
+        "height": 30
+      },
+      "expect": "bundled",
+      "assetRequests": 0,
+      "highestSequence": 12
+    },
+    {
+      "name": "removed-key-other-placement-follows-current",
+      "reason": "A placement the current release publishes resolves from that release.",
+      "releases": [
+        "manifests/history/save-added-seq11.json",
+        "manifests/history/save-removed-seq12.json"
+      ],
+      "cached": [
+        "assets/coast.webp"
+      ],
+      "cachedVideos": [],
+      "network": "online",
+      "resolve": "image",
+      "ref": {
+        "key": "travel.coast",
+        "width": 1200,
+        "height": 900
+      },
+      "expect": "cache",
+      "sequence": 12,
+      "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "assetRequests": 0,
+      "highestSequence": 12
+    },
+    {
+      "name": "republished-same-hash-is-a-cache-hit",
+      "reason": "Cached bytes outlive the removal; publishing the same hash again needs no download.",
+      "releases": [
+        "manifests/history/save-added-seq11.json",
+        "manifests/history/save-removed-seq12.json",
+        "manifests/history/save-republished-seq13.json"
+      ],
+      "cached": [
+        "assets/coast.webp"
+      ],
+      "cachedVideos": [],
+      "network": "online",
+      "resolve": "image",
+      "ref": {
+        "key": "travel.save",
+        "width": 40,
+        "height": 30
+      },
+      "expect": "cache",
+      "sequence": 13,
+      "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "assetRequests": 0,
+      "highestSequence": 13
+    },
+    {
+      "name": "present-other-dimensions-uses-history",
+      "reason": "Control: the key is present at other dimensions, so older cached artwork is still used and nothing is downloaded.",
+      "releases": [
+        "manifests/history/save-added-seq11.json",
+        "manifests/history/save-resized-seq12.json"
+      ],
+      "cached": [
+        "assets/coast.webp"
+      ],
+      "cachedVideos": [],
+      "network": "online",
+      "resolve": "image",
+      "ref": {
+        "key": "travel.save",
+        "width": 40,
+        "height": 30
+      },
+      "expect": "cache",
+      "sequence": 11,
+      "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "assetRequests": 0,
+      "highestSequence": 12
+    },
+    {
+      "name": "present-other-rendering-uses-history",
+      "reason": "Control: the key is present with another rendering, so older cached artwork is still used and nothing is downloaded.",
+      "releases": [
+        "manifests/history/save-added-seq11.json",
+        "manifests/history/save-template-seq12.json"
+      ],
+      "cached": [
+        "assets/coast.webp"
+      ],
+      "cachedVideos": [],
+      "network": "online",
+      "resolve": "image",
+      "ref": {
+        "key": "travel.save",
+        "width": 40,
+        "height": 30
+      },
+      "expect": "cache",
+      "sequence": 11,
+      "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "assetRequests": 0,
+      "highestSequence": 12
+    },
+    {
+      "name": "delivery-failure-uses-history",
+      "reason": "Control: the current artwork cannot be downloaded, so older cached artwork is used. The one request is for the current release only.",
+      "releases": [
+        "manifests/history/save-added-seq11.json",
+        "manifests/history/save-replaced-seq12.json"
+      ],
+      "cached": [
+        "assets/coast.webp"
+      ],
+      "cachedVideos": [],
+      "network": "offline",
+      "resolve": "image",
+      "ref": {
+        "key": "travel.save",
+        "width": 40,
+        "height": 30
+      },
+      "expect": "cache",
+      "sequence": 11,
+      "assetId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "assetRequests": 1,
+      "highestSequence": 12
+    },
+    {
+      "name": "delivery-online-downloads-current",
+      "reason": "Control: the current release downloads its own artwork.",
+      "releases": [
+        "manifests/history/save-added-seq11.json",
+        "manifests/history/save-replaced-seq12.json"
+      ],
+      "cached": [
+        "assets/coast.webp"
+      ],
+      "cachedVideos": [],
+      "network": "online",
+      "resolve": "image",
+      "ref": {
+        "key": "travel.save",
+        "width": 40,
+        "height": 30
+      },
+      "expect": "remote",
+      "sequence": 12,
+      "assetId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "assetRequests": 1,
+      "highestSequence": 12
+    },
+    {
+      "name": "video-placement-removed-gives-poster",
+      "reason": "The current release has no travel.coast, so the cached clip from sequence 9 is not played.",
+      "releases": [
+        "manifests/valid-video-seq9.json",
+        "manifests/history/coast-removed-seq12.json"
+      ],
+      "cached": [
+        "assets/coast.webp"
+      ],
+      "cachedVideos": [
+        "assets/loop.mp4"
+      ],
+      "network": "online",
+      "resolve": "video",
+      "ref": {
+        "key": "travel.coast",
+        "width": 1200,
+        "height": 900
+      },
+      "expect": "poster",
+      "assetRequests": 0,
+      "highestSequence": 12
+    },
+    {
+      "name": "video-placement-removed-poster-image-is-bundled",
+      "reason": "The still poster of a removed placement is the bundled image: the clip and its poster leave together.",
+      "releases": [
+        "manifests/valid-video-seq9.json",
+        "manifests/history/coast-removed-seq12.json"
+      ],
+      "cached": [
+        "assets/coast.webp"
+      ],
+      "cachedVideos": [
+        "assets/loop.mp4"
+      ],
+      "network": "online",
+      "resolve": "image",
+      "ref": {
+        "key": "travel.coast",
+        "width": 1200,
+        "height": 900
+      },
+      "expect": "bundled",
+      "assetRequests": 0,
+      "highestSequence": 12
+    }
+  ]
+}

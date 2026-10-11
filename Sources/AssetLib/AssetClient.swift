@@ -136,7 +136,13 @@ public actor AssetClient {
             do {
                 try Task.checkCancellation()
                 let payload = try ManifestVerifier.verify(envelope, config: configuration)
-                guard let slot = payload.slots.first(where: { $0.key == reference.key && $0.width == reference.width && $0.height == reference.height }) else { continue }
+                guard let slot = payload.slots.first(where: { $0.key == reference.key && $0.width == reference.width && $0.height == reference.height }) else {
+                    // The latest release decides membership: a key it omits has no published artwork, so older releases are not read.
+                    if index == 0, !payload.slots.contains(where: { $0.key == reference.key }) {
+                        return fallback(decision.explain("The current release does not publish this placement."), armSource: decision.source)
+                    }
+                    continue
+                }
                 let cell = selectedCell(in: slot, arm: decision.arm, appearance: appearance)
                 let selected = cell.map { slot.selecting($0) } ?? slot
                 // Like a size mismatch: a different or unknown rendering is never read from cache or downloaded.
