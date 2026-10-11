@@ -141,27 +141,31 @@ private actor HistoryTransport: AssetTransport {
         }
     }
 
+    /// An older release declares arms for travel.coast and the current one drops the key: a decision taken from
+    /// history would call `decide`, and a resolution that walked history would return the cached control or arm b image.
     @Test func removedPlacementKeepsTheArmSourceAndSkipsTheDecision() async throws {
         let root = historyRoot(); defer { try? FileManager.default.removeItem(at: root) }
         let configuration = try historyConfig()
         let storage = try FileAssetStorage(configuration: configuration, root: root)
-        let coast = try historyFixture("assets/coast.webp")
-        try await storage.saveAsset(coast, hash: hashBytes(coast))
+        for file in ["assets/coast.webp", "assets/ridge.webp"] {
+            let data = try historyFixture(file)
+            try await storage.saveAsset(data, hash: hashBytes(data))
+        }
         let decisions = DecisionLog()
         let transport = HistoryTransport(bodies: [:])
         let client = try AssetClient(configuration: configuration, storage: storage, transport: transport) { key, arms in
             await decisions.record(key)
             return arms.first
         }
-        for release in ["manifests/history/save-added-seq11.json", "manifests/history/save-removed-seq12.json"] {
+        for release in ["manifests/valid-cells-arm-seq5.json", "manifests/history/coast-removed-seq12.json"] {
             await transport.set(manifest: try historyFixture(release))
             #expect(await client.refresh().error == nil)
         }
-        let save = AssetReference(key: "travel.save", width: 40, height: 30)
-        let explicit = await client.resolve(save, arm: "b")
+        let coast = AssetReference(key: "travel.coast", width: 1200, height: 900)
+        let explicit = await client.resolve(coast, arm: "b")
         #expect(explicit.source == .bundle && explicit.armSource == .explicit && explicit.message == removedNotice)
-        let control = await client.resolve(save, download: false)
-        #expect(control.source == .bundle && control.armSource == .control && control.message == removedNotice)
+        let decided = await client.resolve(coast)
+        #expect(decided.source == .bundle && decided.armSource == .control && decided.message == removedNotice)
         #expect(await decisions.keys.isEmpty)
         #expect(await transport.bodyRequests.isEmpty)
     }
