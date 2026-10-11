@@ -1,0 +1,40 @@
+{
+  "rule": "resolveVideo downloads only for the current release, verifies length and SHA-256, then checks ftyp, moov before mdat and an avc1 sample entry at the signed size; any failure returns the poster outcome.",
+  "file": "assets/loop.mp4",
+  "descriptor": {
+    "format": "mp4",
+    "profile": "h264-loop-v1",
+    "mime": "video/mp4",
+    "sha256": "029f69b7da56a8f7c29bef1922df0158779022e486f78a3d93a5cfee30744e4c",
+    "url": "/api/delivery/11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222/assets/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/videos/029f69b7da56a8f7c29bef1922df0158779022e486f78a3d93a5cfee30744e4c",
+    "bytes": 30901,
+    "width": 320,
+    "height": 240,
+    "durationMs": 2000,
+    "frameRate": 30
+  },
+  "cases": [
+    {
+      "manifest": "manifests/valid-video-seq9.json",
+      "expect": "video",
+      "sha256": "029f69b7da56a8f7c29bef1922df0158779022e486f78a3d93a5cfee30744e4c"
+    },
+    {
+      "manifest": "manifests/valid-video-not-mp4-seq9.json",
+      "expect": "poster",
+      "reason": "header"
+    }
+  ],
+  "byteFailures": [
+    {
+      "manifest": "manifests/valid-video-seq9.json",
+      "body": "assets/loop-tampered.mp4",
+      "reason": "Same length, wrong SHA-256."
+    },
+    {
+      "manifest": "manifests/valid-video-seq9.json",
+      "body": "assets/loop-truncated.mp4",
+      "reason": "Short body, wrong length and SHA-256."
+    }
+  ]
+}

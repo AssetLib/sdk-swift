@@ -694,6 +694,168 @@
       "verification": "reject",
       "reason": "Malformed rendering on a variant cell.",
       "config": "production"
+    },
+    {
+      "file": "manifests/valid-video-seq9.json",
+      "verification": "accept",
+      "reason": "A muted looping clip beside its required poster; clients without video support ignore it and keep the poster.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/valid-video-not-mp4-seq9.json",
+      "verification": "accept",
+      "reason": "Stateless-valid descriptor whose signed bytes are a WebP: the header check after the hash check must fail, and the poster stays.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-version-2.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: version-2.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-null-version.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: null-version.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-missing-version.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: missing-version.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-null-descriptor.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: null-descriptor.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-format.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: format.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-profile.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: profile.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-mime.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: mime.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-external-url.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: external-url.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-animation-route.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: animation-route.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-wrong-url-hash.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: wrong-url-hash.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-query.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: query.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-uppercase-hash.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: uppercase-hash.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-zero-bytes.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: zero-bytes.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-too-many-bytes.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: too-many-bytes.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-too-wide.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: too-wide.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-too-many-pixels.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: too-many-pixels.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-aspect.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: aspect.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-short.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: short.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-long.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: long.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-fractional-duration.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: fractional-duration.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-zero-frame-rate.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: zero-frame-rate.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-frame-rate-31.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: frame-rate-31.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-string-frame-rate.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: string-frame-rate.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-with-animation.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: with-animation.",
+      "config": "production"
+    },
+    {
+      "file": "manifests/invalid/video-on-cell.json",
+      "verification": "reject",
+      "reason": "Malformed video extension: on-cell.",
+      "config": "production"
     }
   ],
   "configs": {
