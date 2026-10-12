@@ -162,7 +162,7 @@ Existing WebP-only manifests and old `.webp` cache files still work. The new for
 
 ## Generate typed references offline
 
-Copy `scripts/generate-catalog.py` and adapt [Examples/catalog.json](Examples/catalog.json) to your app. Each placement has a stable key, two-part Swift symbol, logical dimensions, and the name of a bundled fallback image in your asset catalog.
+Copy `scripts/generate-catalog.py` and adapt [Examples/catalog.json](Examples/catalog.json) to your app. Each placement has a stable key, a two-part Swift symbol, a width and height, and the name of a bundled fallback image in your asset catalog. The width and height are a reference size, not a crop: they fix the aspect ratio every published image must match, and they are the size the client requests when you pass no `targetPixels`; the console accepts any image at that ratio. Placements are declared here, in the app repository, and registered with the console from CI by `assetlib sync --platform ios` (the `@assetlib/cli` package attached to each [JavaScript SDK release](https://github.com/AssetLib/sdk-js/releases)); a placement someone requested in the console becomes declared when a build registers the same contract.
 
 ```sh
 python3 scripts/generate-catalog.py catalog.json Sources/Artwork.generated.swift
@@ -171,6 +171,8 @@ python3 scripts/generate-catalog.py catalog.json Sources/Artwork.generated.swift
 Commit the catalog and generated source. Generation uses no network or credentials, and is not a build phase. The resulting `AssetCatalog.Travel.coast` is a typed reference; `AppArtwork(store: images).travel.coast` resolves it to a normal image. Use `bundle:` when your fallback assets live outside `.main`.
 
 An existing placement can receive new compatible artwork without rebuilding the app. Adding a Swift symbol or changing its layout contract requires a new build. Logical placement dimensions must match the signed manifest, while decoded pixels may differ at the same aspect ratio.
+
+State sets, several named images that publish together, are resolved by the JavaScript SDK; this SDK shows a stateful placement's default state, which the manifest carries as the placement's base image. Usage reporting, the JavaScript SDK's opt-in telemetry, is not in this SDK yet (planned): the console's Where used shows nothing from a Swift app beyond the builds `assetlib sync` registers.
 
 ## Tintable icons
 
