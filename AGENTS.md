@@ -66,7 +66,7 @@ swift build -c release            # also compiles Examples/ through the AssetLib
 ## Release and versioning
 
 - No version in `Package.swift`; SwiftPM resolves the git tag. Version strings to change together: README "Install" (the Xcode exact version and the `.package(..., exact:)` line) and a new CHANGELOG.md heading whose `Validation:` line states only what was actually run.
-- Tags are bare semver with no `v` prefix (`0.3.0-preview.1`), annotated, with a matching GitHub prerelease. Never move or delete a published tag; apps pin `exact:`.
+- Tags are annotated, with a matching GitHub prerelease. From the next release they carry a `v` prefix (`v0.7.0-preview.1`; maintainer decision of October 9, 2026, matching the Android and JavaScript SDKs). Tags up to `0.6.0-preview.1` are bare and stay that way. SwiftPM strips the `v`, so apps still pin `exact: "0.7.0-preview.1"` (see VERIFICATION.md, October 11, 2026). Never rename, move, duplicate or delete a published tag; apps pin `exact:`.
 - `0.2.1-preview.1` was tagged from a side branch and is not an ancestor of `main`. `phase-4-native-parity` is fully contained in `main`. Work from `main`.
 - Do not tag, push, or publish unless the maintainer asks.
 

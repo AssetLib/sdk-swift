@@ -1,3 +1,13 @@
+# SwiftPM resolution of a `v`-prefixed tag — October 11, 2026 (ET)
+
+Why: tags after `0.6.0-preview.1` carry a `v` prefix (AGENTS.md). A local check on macOS (Apple Swift 6.4), not a check of this repository's tags: a throwaway git package with an annotated bare tag `0.6.0-preview.1` and an annotated tag `v0.7.0-preview.1` on a later commit, resolved over `file://` by clean consumer packages with `swift package resolve` and `swift run`.
+
+- `exact: "0.7.0-preview.1"`: `resolved at 0.7.0-preview.1`; `Package.resolved` records version `0.7.0-preview.1` and the `v0.7.0-preview.1` commit; the program printed the later commit's value.
+- `from: "0.6.0-preview.1"`: also `resolved at 0.7.0-preview.1`, so a range spans the bare and the `v`-prefixed tags.
+- `exact: "0.6.0-preview.1"` in the same package: `resolved at 0.6.0-preview.1`, the bare tag.
+
+Not checked: Xcode's package UI and the Swift Package Index.
+
 # 0.6.0-preview.1 (placement membership) — October 11, 2026 (ET)
 
 Unit tests and builds on macOS (Apple Swift 6.4, Xcode 27.0), plain commands with no cache workaround, on a clean clone of `main` at `e9283d4` plus this change. Not a simulator, device or hosted run.
