@@ -9,7 +9,7 @@ Tag `v0.7.0-preview.1` (the first `v`-prefixed Swift tag; SwiftPM strips it, so 
 - Everything else is unchanged: `AssetReference(key:width:height:)`, `image(for:fallback:)`, `artwork(for:fallback:bundledAccessibility:locale:requireDescription:)`, generated `AppArtwork` code, the wire format, storage, limits and the shared contract. `AssetStorage` and `AssetTransport` gain no requirements. No fixture changed.
 - `Package.swift` declares `.iOS(.v16), .macOS(.v13)`; nothing in the package uses an API above that floor.
 
-Validation: on October 25, 2026 on macOS (Apple Swift 6.4, Xcode 27.1), `swift test` passed 76 tests in 9 suites (75 passed, the optional hosted test skipped), including all 149 signed manifest cases; `python3 scripts/test_codegen.py` ran 7 tests OK; `swift build -c release` completed including `AssetLibExample`; and `xcodebuild build -scheme AssetLib -destination 'generic/platform=iOS Simulator'` succeeded with `IPHONEOS_DEPLOYMENT_TARGET = `. macOS unit tests and builds only: no simulator run, device, VoiceOver or hosted acceptance is claimed, and demo-ios stays pinned to `0.6.0-preview.1`.
+Validation: on October 25, 2026 on macOS (Apple Swift 6.4, Xcode 27.1), `swift test` passed 76 tests in 9 suites (75 passed, the optional hosted test skipped), including all 149 signed manifest cases; `python3 scripts/test_codegen.py` ran 7 tests OK; `swift build -c release` completed including `AssetLibExample`; and `xcodebuild build -scheme AssetLib -destination 'generic/platform=iOS Simulator'` succeeded, compiling for `arm64-apple-ios16.0-simulator`. macOS unit tests and builds only: no simulator run, device, VoiceOver or hosted acceptance is claimed, and demo-ios stays pinned to `0.6.0-preview.1`.
 
 ## 0.6.0-preview.1 — October 11, 2026
 

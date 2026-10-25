@@ -7,7 +7,7 @@ Run on macOS with Apple Swift 6.4 and Xcode 27.1, on the working tree that becam
 - `swift test`: `Test run with 76 tests in 9 suites passed` (the optional `HostedAcceptance` test skipped without a configuration file).
 - `python3 scripts/test_codegen.py`: `Ran 7 tests ... OK`.
 - `swift build -c release`: `Build complete!`, including `AssetLibExample`.
-- `xcodebuild build -scheme AssetLib -destination 'generic/platform=iOS Simulator' -derivedDataPath <scratch>`: `** BUILD SUCCEEDED **`; `xcodebuild -showBuildSettings` for the same scheme and destination reports `IPHONEOS_DEPLOYMENT_TARGET = `.
+- `xcodebuild build -scheme AssetLib -destination 'generic/platform=iOS Simulator' -derivedDataPath <scratch>`: `** BUILD SUCCEEDED **`; the compiler invocations in the build log use `-target arm64-apple-ios16.0-simulator`, so the package compiles for the iOS 16.0 deployment target. (`xcodebuild -showBuildSettings` prints no settings for a bare package scheme, so the first draft of this entry, committed in the tagged release commit `2b53a75`, left the value blank; this commit corrects the record.)
 
 Not established: a simulator or device run of an app on this version, VoiceOver, hosted acceptance, and demo-ios (still pinned to `0.6.0-preview.1`). A compile for the iOS 16 deployment target is not a run on iOS 16.
 
