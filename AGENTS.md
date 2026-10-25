@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Assetlib for Swift: the public, MIT-licensed SwiftPM package (product `AssetLib`) that verifies signed artwork releases, keeps a verified local cache, and returns ordinary SwiftUI `Image` values with the app's bundled fallbacks. iOS 17+ / macOS 14+, Swift 6 language mode, no third-party runtime dependencies. Apps pin it by exact git tag; manifests are signed by the hosted console (https://console.assetlib.dev). Developer preview; latest release `0.6.0-preview.1` (October 11, 2026). The Kotlin SDK (AssetLib/sdk-android) and the JavaScript SDK (AssetLib/sdk-js) implement the same contract.
+Assetlib for Swift: the public, MIT-licensed SwiftPM package (product `AssetLib`) that verifies signed artwork releases, keeps a verified local cache, and returns ordinary SwiftUI `Image` values with the app's bundled fallbacks. iOS 16+ / macOS 13+ (since `0.7.0-preview.1`; the Observation framework is not used because it needs iOS 17), Swift 6 language mode, no third-party runtime dependencies. Apps pin it by exact git tag; manifests are signed by the hosted console (https://console.assetlib.dev). Developer preview; latest release `0.7.0-preview.1` (October 25, 2026, tag `v0.7.0-preview.1`). The Kotlin SDK (AssetLib/sdk-android) and the JavaScript SDK (AssetLib/sdk-js) implement the same contract.
 
 ## Commands
 
@@ -27,7 +27,7 @@ swift build -c release            # also compiles Examples/ through the AssetLib
 - `Sources/AssetLib/Transport.swift`: HTTPS GET with no redirects, cookies, or credential storage, a streamed byte limit, and a separate `video/mp4` deadline.
 - `Sources/AssetLib/Video.swift`: the signed `video` descriptor rules, the bounded MP4 header walk, and `AssetVideo`. `AssetClient.resolveVideo` lives in `AssetClient.swift`.
 - `Sources/AssetLib/AssetLoopingVideo.swift`: the AVFoundation looping view, its testable `LoopingVideoModel`, and the two-player `LoopingVideoSlots`.
-- `Sources/AssetLib/AssetImageStore.swift`: `@MainActor @Observable` store behind the generated accessors.
+- `Sources/AssetLib/AssetImageStore.swift`: `@MainActor` `ObservableObject` store (`@Published` state) behind the generated accessors; apps hold it with `@StateObject`.
 - `Sources/AssetLib/PrivacyInfo.xcprivacy`: declares file-timestamp access (C617.1). Update it if required-reason API use changes.
 - `scripts/generate-catalog.py`: offline generator apps copy; apps commit its output.
 - `Tests/AssetLibTests/Fixtures/`: shared contract corpus (next section).
@@ -62,6 +62,7 @@ swift build -c release            # also compiles Examples/ through the AssetLib
 - Apps commit generated code that calls `AssetReference(key:width:height:)`, `AssetImageStore.image(for:fallback:)`, `AssetImageStore.artwork(for:fallback:bundledAccessibility:locale:requireDescription:)`, and `AssetAccessibility(defaultLocale:descriptions:)`. Keep these source-compatible. The `AssetLibExample` target and `test_codegen.py` catch breaks.
 - Add parameters with defaults; do not remove or reorder existing ones. A new requirement on `AssetStorage` or `AssetTransport` breaks custom implementations; call it out in CHANGELOG.md.
 - Keep Swift 6 strict concurrency clean (`Sendable`, actor isolation, `@MainActor` store).
+- Don't use APIs above iOS 16 / macOS 13 without `#available` and a fallback; the floor exists so apps with iOS 16 minimums can adopt the package (founder decision, October 25, 2026).
 
 ## Release and versioning
 

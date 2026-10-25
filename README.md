@@ -1,6 +1,6 @@
 # Assetlib for Swift
 
-An open-source preview SDK for verified, remotely managed app artwork. **iOS 17+, macOS 14+, Swift 6.** No third-party runtime dependencies.
+An open-source preview SDK for verified, remotely managed app artwork. **iOS 16+, macOS 13+, Swift 6.** No third-party runtime dependencies.
 
 Your app owns its UI. Assetlib returns normal SwiftUI `Image` values and handles signed release manifests, bounded downloads, verified local caching, and bundled fallbacks. A generated accessor can look like this:
 
@@ -12,14 +12,14 @@ artwork.travel.coast
     .clipped()
 ```
 
-`artwork` is a generated `AppArtwork` value backed by an observable `AssetImageStore`. The getter returns a native `Image` immediately; it does not start a network request. Read it in a SwiftUI body so Observation can re-evaluate that body after a download. A previously retained `Image` is a snapshot, not a network subscription.
+`artwork` is a generated `AppArtwork` value backed by an `AssetImageStore`, an `ObservableObject`. The getter returns a native `Image` immediately; it does not start a network request. Hold the store with `@StateObject` (or `@ObservedObject`) and read it in a SwiftUI body so the body re-evaluates after a download; a plain `@State` compiles but never updates. A previously retained `Image` is a snapshot, not a network subscription.
 
 ## Install
 
-Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.6.0-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
+Add the package in Xcode using `https://github.com/AssetLib/sdk-swift.git`, exact version `0.7.0-preview.1`, and choose the **AssetLib** product. Or use SwiftPM:
 
 ```swift
-.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.6.0-preview.1")
+.package(url: "https://github.com/AssetLib/sdk-swift.git", exact: "0.7.0-preview.1")
 ```
 
 The runnable [SwiftUI travel demo](https://github.com/AssetLib/demo-ios) includes bundled illustrations, generated accessors, and a connection sheet. It works before you create an account.
@@ -40,7 +40,7 @@ Keep UI state on the main actor:
 
 ```swift
 struct WelcomeView: View {
-    @State private var images = AssetImageStore()
+    @StateObject private var images = AssetImageStore()
     let client: AssetClient
     private var artwork: AppArtwork { AppArtwork(store: images) }
 
@@ -66,7 +66,7 @@ Feed SwiftUI's color scheme into the store and refresh when it changes. Generate
 ```swift
 struct AdaptiveWelcomeView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @State private var images = AssetImageStore()
+    @StateObject private var images = AssetImageStore()
     let client: AssetClient
     private var artwork: AppArtwork { AppArtwork(store: images) }
 

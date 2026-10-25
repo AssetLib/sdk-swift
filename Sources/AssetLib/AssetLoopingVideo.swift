@@ -17,7 +17,7 @@ public struct AssetLoopingVideo: View {
     private let reference: AssetReference
     private let poster: Image
     private let contentMode: ContentMode
-    @State private var model = LoopingVideoModel()
+    @StateObject private var model = LoopingVideoModel()
 
     /// Pass the placement's resolved image (or bundled fallback) as `poster`; apply your own accessibility label to this view.
     public init(client: AssetClient, reference: AssetReference, poster: Image, contentMode: ContentMode = .fit) {
@@ -59,20 +59,20 @@ public struct AssetLoopingVideo: View {
 }
 
 /// Playback state for one `AssetLoopingVideo`. Internal so tests can drive the rules without a window.
-@MainActor @Observable
-final class LoopingVideoModel {
-    var visible = false { didSet { update() } }
-    var foreground = true { didSet { update() } }
-    var reduceMotion = false { didSet { update() } }
-    private(set) var clip: URL?
-    private(set) var failed = false
-    private(set) var holdsSlot = false
-    private(set) var player: AVQueuePlayer?
-    private(set) var frameRendered = false
-    @ObservationIgnored private var loadedReference: AssetReference?
-    @ObservationIgnored private var looper: AVPlayerLooper?
-    @ObservationIgnored private var observations: [NSKeyValueObservation] = []
-    @ObservationIgnored private let slots: LoopingVideoSlots
+@MainActor
+final class LoopingVideoModel: ObservableObject {
+    @Published var visible = false { didSet { update() } }
+    @Published var foreground = true { didSet { update() } }
+    @Published var reduceMotion = false { didSet { update() } }
+    @Published private(set) var clip: URL?
+    @Published private(set) var failed = false
+    @Published private(set) var holdsSlot = false
+    @Published private(set) var player: AVQueuePlayer?
+    @Published private(set) var frameRendered = false
+    private var loadedReference: AssetReference?
+    private var looper: AVPlayerLooper?
+    private var observations: [NSKeyValueObservation] = []
+    private let slots: LoopingVideoSlots
 
     init(slots: LoopingVideoSlots = .shared, reduceMotion: Bool = LoopingVideoModel.systemReduceMotion) {
         self.slots = slots

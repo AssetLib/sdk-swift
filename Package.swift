@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "AssetLib",
-    platforms: [.iOS(.v17), .macOS(.v14)],
+    platforms: [.iOS(.v16), .macOS(.v13)],
     products: [.library(name: "AssetLib", targets: ["AssetLib"])],
     targets: [
         .target(name: "AssetLib", resources: [.process("PrivacyInfo.xcprivacy")]),

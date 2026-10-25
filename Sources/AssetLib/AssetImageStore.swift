@@ -1,5 +1,5 @@
 import SwiftUI
-import Observation
+import Combine
 import ImageIO
 
 /// A synchronous snapshot pairing a native image with its optional content description.
@@ -11,26 +11,27 @@ public struct AssetArtwork {
 }
 
 /// Read image(in:) inside a SwiftUI body. The returned Image remains fully native and caller-modifiable.
-@MainActor @Observable
-public final class AssetImageStore {
-    public private(set) var results: [AssetReference: ResolvedAsset] = [:]
-    public private(set) var release: Int = 0
-    public private(set) var lastError: String?
-    public private(set) var connected = false
-    public private(set) var isLoading = false
+/// Hold the store with `@StateObject` (or `@ObservedObject`) so the body re-evaluates after a download.
+@MainActor
+public final class AssetImageStore: ObservableObject {
+    @Published public private(set) var results: [AssetReference: ResolvedAsset] = [:]
+    @Published public private(set) var release: Int = 0
+    @Published public private(set) var lastError: String?
+    @Published public private(set) var connected = false
+    @Published public private(set) var isLoading = false
     /// Feed the view's color scheme here, then explicitly refresh to load that appearance.
-    public var appearance: AssetAppearance? {
+    @Published public var appearance: AssetAppearance? {
         didSet { if appearance != oldValue { invalidateSelection() } }
     }
     /// Per-reference explicit arm assignments. Use "control" to bypass the decision callback.
-    public var arm: [AssetReference: String] = [:] {
+    @Published public var arm: [AssetReference: String] = [:] {
         didSet { if arm != oldValue { invalidateSelection() } }
     }
-    private var images: [AssetReference: Image] = [:]
-    @ObservationIgnored private var imageCosts: [AssetReference: Int] = [:]
-    @ObservationIgnored private var imageOrder: [AssetReference] = []
-    @ObservationIgnored private var client: AssetClient?
-    @ObservationIgnored private var generation: UInt64 = 0
+    @Published private var images: [AssetReference: Image] = [:]
+    private var imageCosts: [AssetReference: Int] = [:]
+    private var imageOrder: [AssetReference] = []
+    private var client: AssetClient?
+    private var generation: UInt64 = 0
 
     public init() {}
     public func connect(_ client: AssetClient) {

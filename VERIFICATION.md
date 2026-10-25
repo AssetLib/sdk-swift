@@ -1,3 +1,16 @@
+# 0.7.0-preview.1 (iOS 16 floor) — October 25, 2026 (ET)
+
+Why: founder decision of October 25, 2026 to lower the floor so apps with iOS 16 minimums can adopt the package. `Package.swift` now declares `.iOS(.v16), .macOS(.v13)`; `AssetImageStore` and `LoopingVideoModel` moved from `@Observable` to `ObservableObject`.
+
+Run on macOS with Apple Swift 6.4 and Xcode 27.1, on the working tree that became the release commit:
+
+- `swift test`: `Test run with 76 tests in 9 suites passed` (the optional `HostedAcceptance` test skipped without a configuration file).
+- `python3 scripts/test_codegen.py`: `Ran 7 tests ... OK`.
+- `swift build -c release`: `Build complete!`, including `AssetLibExample`.
+- `xcodebuild build -scheme AssetLib -destination 'generic/platform=iOS Simulator' -derivedDataPath <scratch>`: `** BUILD SUCCEEDED **`; `xcodebuild -showBuildSettings` for the same scheme and destination reports `IPHONEOS_DEPLOYMENT_TARGET = `.
+
+Not established: a simulator or device run of an app on this version, VoiceOver, hosted acceptance, and demo-ios (still pinned to `0.6.0-preview.1`). A compile for the iOS 16 deployment target is not a run on iOS 16.
+
 # SwiftPM resolution of a `v`-prefixed tag — October 11, 2026 (ET)
 
 Why: tags after `0.6.0-preview.1` carry a `v` prefix (AGENTS.md). A local check on macOS (Apple Swift 6.4), not a check of this repository's tags: a throwaway git package with an annotated bare tag `0.6.0-preview.1` and an annotated tag `v0.7.0-preview.1` on a later commit, resolved over `file://` by clean consumer packages with `swift package resolve` and `swift run`.

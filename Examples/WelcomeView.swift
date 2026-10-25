@@ -3,7 +3,7 @@ import AssetLib
 
 // Compiled examples: native Image values with explicit per-usage accessibility.
 struct WelcomeView: View {
-    @State private var images = AssetImageStore()
+    @StateObject private var images = AssetImageStore()
     let client: AssetClient
     private var artwork: AppArtwork { AppArtwork(store: images) }
 

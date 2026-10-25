@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0-preview.1 — October 25, 2026
+
+Tag `v0.7.0-preview.1` (the first `v`-prefixed Swift tag; SwiftPM strips it, so apps pin `exact: "0.7.0-preview.1"`).
+
+- Lowers the platform floor from iOS 17 / macOS 14 to **iOS 16 / macOS 13**. The only reason for iOS 17 was the Observation framework; apps whose minimum iOS is 16 can now add the package without raising their deployment target.
+- `AssetImageStore` and the internal `LoopingVideoModel` behind `AssetLoopingVideo` are now `ObservableObject`s with `@Published` state instead of `@Observable` classes. **Source change for apps:** hold the store with `@StateObject` (or `@ObservedObject` when it is passed in), not `@State`. A plain `@State private var images = AssetImageStore()` still compiles but the view no longer re-evaluates after a download. The README, the compiled example and the demo instructions use `@StateObject`.
+- Everything else is unchanged: `AssetReference(key:width:height:)`, `image(for:fallback:)`, `artwork(for:fallback:bundledAccessibility:locale:requireDescription:)`, generated `AppArtwork` code, the wire format, storage, limits and the shared contract. `AssetStorage` and `AssetTransport` gain no requirements. No fixture changed.
+- `Package.swift` declares `.iOS(.v16), .macOS(.v13)`; nothing in the package uses an API above that floor.
+
+Validation: on October 25, 2026 on macOS (Apple Swift 6.4, Xcode 27.1), `swift test` passed 76 tests in 9 suites (75 passed, the optional hosted test skipped), including all 149 signed manifest cases; `python3 scripts/test_codegen.py` ran 7 tests OK; `swift build -c release` completed including `AssetLibExample`; and `xcodebuild build -scheme AssetLib -destination 'generic/platform=iOS Simulator'` succeeded with `IPHONEOS_DEPLOYMENT_TARGET = `. macOS unit tests and builds only: no simulator run, device, VoiceOver or hosted acceptance is claimed, and demo-ios stays pinned to `0.6.0-preview.1`.
+
 ## 0.6.0-preview.1 — October 11, 2026
 
 Implements the shared contract revision of October 11, 2026 (placement membership).
